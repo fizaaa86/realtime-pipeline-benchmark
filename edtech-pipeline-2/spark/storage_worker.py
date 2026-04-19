@@ -1,0 +1,443 @@
+"""
+EdTech Pipeline — Storage Worker (Kubernetes Pod)
+==================================================
+Lightweight Kafka consumer — NO Spark/JVM. Runs as a k8s Deployment pod.
+
+Role: Read edtech-events via consumer group 'edtech-storage-group', write to
+      S3 (Parquet) and DynamoDB (UserStats, CourseStats).
+
+Kafka distributes partitions across all pods in the same consumer group, so
+adding pods = adding parallel throughput. With 10 partitions on edtech-events
+this scales to 10× pods for 10× intake rate.
+
+  1 pod  → handles ~30 ev/s   (steady state)
+  3 pods → handles ~300 ev/s  (10× load)
+  10 pods → handles ~3000 ev/s (100× load)
+
+KEDA ScaledObject (keda-scaledobject.yaml) watches consumer group lag and
+scales this Deployment from 1 to 10 replicas automatically.
+
+Environment variables (from k8s ConfigMap edtech-config):
+  KAFKA_BOOTSTRAP    — host:port  (default localhost:9093)
+  KAFKA_TOPIC        — topic name (default edtech-events)
+  CONSUMER_GROUP_ID  — consumer group (default edtech-storage-group)
+  S3_BUCKET          — S3 bucket name
+  AWS_REGION         — AWS region (default ap-south-1)
+  FLUSH_EVENTS       — flush to S3 after N buffered events (default 5000)
+  FLUSH_SECS         — flush after N seconds regardless of count (default 300)
+  PROM_PORT          — Prometheus metrics port (default 8001)
+"""
+
+import io
+import json
+import logging
+import os
+import signal
+import time
+import uuid
+from collections import defaultdict
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Optional
+
+import boto3
+import pyarrow as pa
+import pyarrow.parquet as pq
+from kafka import KafkaConsumer
+from kafka.errors import KafkaError
+from prometheus_client import Counter, Gauge, Histogram, start_http_server
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-7s  [worker]  %(message)s",
+    datefmt="%H:%M:%S",
+)
+logging.getLogger("kafka").setLevel(logging.WARNING)
+logging.getLogger("kafka.conn").setLevel(logging.WARNING)
+log = logging.getLogger("storage_worker")
+
+# ── Config ────────────────────────────────────────────────────────────────────
+KAFKA_BOOTSTRAP   = os.getenv("KAFKA_BOOTSTRAP",   "localhost:9093")
+KAFKA_TOPIC       = os.getenv("KAFKA_TOPIC",        "edtech-events")
+CONSUMER_GROUP_ID = os.getenv("CONSUMER_GROUP_ID",  "edtech-storage-group")
+S3_BUCKET         = os.getenv("S3_BUCKET",          "")
+AWS_REGION        = os.getenv("AWS_REGION",         "ap-south-1")
+FLUSH_EVENTS      = int(os.getenv("FLUSH_EVENTS",   "5000"))
+FLUSH_SECS        = int(os.getenv("FLUSH_SECS",     "300"))   # 5 minutes
+PROM_PORT         = int(os.getenv("PROM_PORT",      "8001"))
+
+# ── Prometheus metrics ────────────────────────────────────────────────────────
+events_processed_c = Counter(
+    "worker_events_processed_total",
+    "Total events consumed from Kafka by this worker pod",
+)
+s3_flushes_c = Counter(
+    "worker_s3_flushes_total",
+    "Total S3 Parquet flushes performed by this pod",
+)
+flush_duration_h = Histogram(
+    "worker_flush_duration_seconds",
+    "Time to flush a batch to S3",
+    buckets=[0.1, 0.5, 1, 2, 5, 10, 30],
+)
+kafka_lag_g = Gauge(
+    "worker_kafka_lag",
+    "Current consumer group lag for this pod's assigned partitions",
+)
+buffer_size_g = Gauge(
+    "worker_buffer_size",
+    "Number of events currently buffered, waiting for flush",
+)
+dynamo_writes_c = Counter(
+    "worker_dynamo_writes_total",
+    "Total DynamoDB update_item calls by this pod",
+)
+
+# ── Graceful shutdown ─────────────────────────────────────────────────────────
+_running = True
+
+
+def _handle_signal(sig, frame):
+    global _running
+    log.info("Signal %s received — draining buffer and shutting down", sig)
+    _running = False
+
+
+signal.signal(signal.SIGTERM, _handle_signal)
+signal.signal(signal.SIGINT,  _handle_signal)
+
+# ── PyArrow schema (must match generator output) ─────────────────────────────
+_PA_SCHEMA = pa.schema([
+    pa.field("user_id",          pa.string()),
+    pa.field("event_type",       pa.string()),
+    pa.field("timestamp",        pa.string()),
+    pa.field("class_id",         pa.string()),
+    pa.field("session_id",       pa.string()),
+    pa.field("score",            pa.float64()),
+    pa.field("engagement_score", pa.float64()),
+    pa.field("device",           pa.string()),
+    pa.field("region",           pa.string()),
+    pa.field("subscription_type",pa.string()),
+    pa.field("difficulty_level", pa.string()),
+    pa.field("leave_reason",     pa.string()),
+    pa.field("session_status",   pa.string()),
+    pa.field("class_duration_sec", pa.float64()),
+    pa.field("passed",           pa.bool_()),
+])
+
+# ── AWS clients (lazy, one per pod) ──────────────────────────────────────────
+_s3_client          = None
+_user_stats_table   = None
+_course_stats_table = None
+
+
+def _s3():
+    global _s3_client
+    if _s3_client is None:
+        _s3_client = boto3.client("s3", region_name=AWS_REGION)
+    return _s3_client
+
+
+def _user_stats():
+    global _user_stats_table
+    if _user_stats_table is None:
+        _user_stats_table = boto3.resource(
+            "dynamodb", region_name=AWS_REGION
+        ).Table("UserStats")
+    return _user_stats_table
+
+
+def _course_stats():
+    global _course_stats_table
+    if _course_stats_table is None:
+        _course_stats_table = boto3.resource(
+            "dynamodb", region_name=AWS_REGION
+        ).Table("CourseStats")
+    return _course_stats_table
+
+
+# ── S3 flush ──────────────────────────────────────────────────────────────────
+
+def _flush_to_s3(events: list[dict]) -> None:
+    """Write buffered events to S3 as a single Parquet file."""
+    if not events or not S3_BUCKET:
+        return
+
+    t0 = time.time()
+    now = datetime.now(timezone.utc)
+
+    # Build column arrays — missing fields default to None
+    def col(field):
+        return [e.get(field) for e in events]
+
+    def float_col(field):
+        raw = col(field)
+        return [float(v) if v is not None else None for v in raw]
+
+    def bool_col(field):
+        raw = col(field)
+        return [bool(v) if v is not None else None for v in raw]
+
+    table = pa.table(
+        {
+            "user_id":           pa.array(col("user_id"),           type=pa.string()),
+            "event_type":        pa.array(col("event_type"),        type=pa.string()),
+            "timestamp":         pa.array(col("timestamp"),         type=pa.string()),
+            "class_id":          pa.array(col("class_id"),          type=pa.string()),
+            "session_id":        pa.array(col("session_id"),        type=pa.string()),
+            "score":             pa.array(float_col("score"),       type=pa.float64()),
+            "engagement_score":  pa.array(float_col("engagement_score"), type=pa.float64()),
+            "device":            pa.array(col("device"),            type=pa.string()),
+            "region":            pa.array(col("region"),            type=pa.string()),
+            "subscription_type": pa.array(col("subscription_type"), type=pa.string()),
+            "difficulty_level":  pa.array(col("difficulty_level"),  type=pa.string()),
+            "leave_reason":      pa.array(col("leave_reason"),      type=pa.string()),
+            "session_status":    pa.array(col("session_status"),    type=pa.string()),
+            "class_duration_sec":pa.array(float_col("class_duration_sec"), type=pa.float64()),
+            "passed":            pa.array(bool_col("passed"),       type=pa.bool_()),
+        },
+        schema=_PA_SCHEMA,
+    )
+
+    buf = io.BytesIO()
+    pq.write_table(table, buf, compression="snappy")
+    buf.seek(0)
+
+    key = (
+        f"raw/year={now.year}/month={now.month:02d}/"
+        f"day={now.day:02d}/hour={now.hour:02d}/"
+        f"{int(now.timestamp())}_{uuid.uuid4().hex[:8]}.parquet"
+    )
+
+    _s3().put_object(Bucket=S3_BUCKET, Key=key, Body=buf.getvalue())
+
+    elapsed = time.time() - t0
+    flush_duration_h.observe(elapsed)
+    s3_flushes_c.inc()
+    log.info("S3 flush: %d events → s3://%s/%s (%.2fs)", len(events), S3_BUCKET, key, elapsed)
+
+
+# ── DynamoDB writes ───────────────────────────────────────────────────────────
+
+def _write_user_stats(events: list[dict]) -> None:
+    """Aggregate per-user stats and atomically upsert into DynamoDB UserStats.
+
+    Uses ADD for counters so concurrent pods never corrupt each other's data.
+    Each pod ADDs its partition's delta; DynamoDB accumulates atomically.
+    """
+    if not events:
+        return
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    agg: dict = {}
+
+    for ev in events:
+        uid = ev.get("user_id")
+        if not uid:
+            continue
+        d = agg.setdefault(uid, {
+            "count": 0, "last_type": None, "last_seen": None,
+            "sessions": 0, "scores": [], "engagements": [],
+        })
+        d["count"]    += 1
+        d["last_type"] = ev.get("event_type")
+        d["last_seen"] = ev.get("timestamp")
+        if ev.get("event_type") == "session_end":
+            d["sessions"] += 1
+            if ev.get("score") is not None:
+                d["scores"].append(float(ev["score"]))
+            if ev.get("engagement_score") is not None:
+                d["engagements"].append(float(ev["engagement_score"]))
+
+    table = _user_stats()
+    for uid, d in agg.items():
+        update_expr = "ADD total_events :n, total_sessions :s SET last_event_type = :lt, last_seen = :ls"
+        expr_vals: dict = {
+            ":n":  d["count"],
+            ":s":  d["sessions"],
+            ":lt": d["last_type"] or "unknown",
+            ":ls": d["last_seen"] or "",
+        }
+        if d["scores"]:
+            update_expr += ", avg_score = :sc"
+            expr_vals[":sc"] = Decimal(str(round(sum(d["scores"]) / len(d["scores"]), 2)))
+        if d["engagements"]:
+            update_expr += ", avg_engagement = :eng"
+            expr_vals[":eng"] = Decimal(str(round(sum(d["engagements"]) / len(d["engagements"]), 3)))
+        try:
+            table.update_item(
+                Key={"user_id": uid, "date": today},
+                UpdateExpression=update_expr,
+                ExpressionAttributeValues=expr_vals,
+            )
+            dynamo_writes_c.inc()
+        except Exception as exc:
+            log.warning("UserStats update_item failed uid=%s: %s", uid, exc)
+
+
+def _write_course_stats(events: list[dict]) -> None:
+    """Aggregate per-course stats and atomically upsert into DynamoDB CourseStats."""
+    if not events:
+        return
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    agg: dict = {}
+
+    for ev in events:
+        cid = ev.get("class_id")
+        if not cid:
+            continue
+        d = agg.setdefault(str(cid), {
+            "sessions": 0, "scores": [], "engagements": [],
+            "passed": 0, "joins": 0, "voluntary_leaves": 0,
+        })
+        etype = ev.get("event_type")
+        if etype == "session_end":
+            d["sessions"] += 1
+            if ev.get("score") is not None:
+                d["scores"].append(float(ev["score"]))
+            if ev.get("engagement_score") is not None:
+                d["engagements"].append(float(ev["engagement_score"]))
+            if ev.get("passed"):
+                d["passed"] += 1
+        elif etype == "class_join":
+            d["joins"] += 1
+        elif etype == "class_leave" and ev.get("leave_reason") == "voluntary":
+            d["voluntary_leaves"] += 1
+
+    table = _course_stats()
+    for cid, d in agg.items():
+        update_expr = "ADD session_count :s, join_count :j"
+        expr_vals: dict = {":s": d["sessions"], ":j": d["joins"]}
+        set_parts: list[str] = []
+        if d["scores"]:
+            set_parts.append("avg_score = :sc")
+            set_parts.append("pass_rate = :pr")
+            expr_vals[":sc"] = Decimal(str(round(sum(d["scores"]) / len(d["scores"]), 2)))
+            expr_vals[":pr"] = Decimal(str(round(d["passed"] / len(d["scores"]) * 100, 1)))
+        if d["engagements"]:
+            set_parts.append("avg_engagement = :eng")
+            expr_vals[":eng"] = Decimal(str(round(sum(d["engagements"]) / len(d["engagements"]), 3)))
+        if d["joins"] > 0:
+            set_parts.append("dropout_pct = :dp")
+            expr_vals[":dp"] = Decimal(str(round(d["voluntary_leaves"] / d["joins"] * 100, 1)))
+        if set_parts:
+            update_expr += " SET " + ", ".join(set_parts)
+        try:
+            table.update_item(
+                Key={"course_id": cid, "date": today},
+                UpdateExpression=update_expr,
+                ExpressionAttributeValues=expr_vals,
+            )
+            dynamo_writes_c.inc()
+        except Exception as exc:
+            log.warning("CourseStats update_item failed cid=%s: %s", cid, exc)
+
+
+# ── Main consumer loop ────────────────────────────────────────────────────────
+
+def _flush(buffer: list) -> None:
+    """Flush buffer to S3 + DynamoDB then clear it."""
+    if not buffer:
+        return
+    events = buffer[:]
+    buffer.clear()
+    buffer_size_g.set(0)
+    log.info("Flushing %d events to S3 + DynamoDB", len(events))
+    _flush_to_s3(events)
+    _write_user_stats(events)
+    _write_course_stats(events)
+
+
+def main():
+    log.info("Starting Prometheus metrics server on port %d", PROM_PORT)
+    start_http_server(PROM_PORT)
+
+    log.info(
+        "Connecting to Kafka: bootstrap=%s  topic=%s  group=%s",
+        KAFKA_BOOTSTRAP, KAFKA_TOPIC, CONSUMER_GROUP_ID,
+    )
+
+    consumer = KafkaConsumer(
+        KAFKA_TOPIC,
+        bootstrap_servers=KAFKA_BOOTSTRAP,
+        group_id=CONSUMER_GROUP_ID,
+        auto_offset_reset="latest",
+        enable_auto_commit=True,
+        auto_commit_interval_ms=5000,
+        fetch_max_bytes=52428800,        # 50 MB max fetch per poll
+        max_partition_fetch_bytes=1048576,  # 1 MB per partition
+        value_deserializer=lambda v: json.loads(v.decode("utf-8", errors="ignore")),
+        consumer_timeout_ms=2000,        # raise StopIteration after 2s idle
+        # ── Scale-out race-condition mitigations ──────────────────────────────
+        # When KEDA scales rapidly (e.g. 1→10 pods), each new pod joining
+        # triggers a Kafka group rebalance. With default 10s session timeout,
+        # a pod can be evicted mid-rebalance when 8+ consumers negotiate
+        # simultaneously, causing cascading re-joins and lag spikes that make
+        # KEDA add even more pods. Longer timeouts prevent this storm.
+        #
+        # Heartbeat every 10s (must be < session_timeout / 3).
+        heartbeat_interval_ms=10000,
+        # 45s session timeout: stays in group through a full rebalance cycle.
+        session_timeout_ms=45000,
+        # Max time between poll() calls. S3 flush is ~0.5s; set generously.
+        max_poll_interval_ms=120000,
+    )
+
+    log.info(
+        "Consumer ready. Flush threshold: %d events OR %ds. S3 bucket: %s",
+        FLUSH_EVENTS, FLUSH_SECS, S3_BUCKET,
+    )
+
+    buffer: list[dict] = []
+    last_flush = time.time()
+    total_consumed = 0
+
+    while _running:
+        try:
+            records = consumer.poll(timeout_ms=1000, max_records=2000)
+        except KafkaError as exc:
+            log.warning("Kafka poll error: %s", exc)
+            time.sleep(2)
+            continue
+
+        for _, messages in records.items():
+            for msg in messages:
+                if isinstance(msg.value, dict):
+                    buffer.append(msg.value)
+
+        batch_size = len(buffer) - total_consumed
+        if batch_size > 0:
+            total_consumed = len(buffer)
+            events_processed_c.inc(batch_size)
+            buffer_size_g.set(len(buffer))
+
+        # Calculate lag for this consumer's assigned partitions
+        try:
+            assigned = consumer.assignment()
+            if assigned:
+                end_offsets  = consumer.end_offsets(list(assigned))
+                committed     = {tp: consumer.committed(tp) for tp in assigned}
+                lag = sum(
+                    max(0, end_offsets.get(tp, 0) - (committed.get(tp) or 0))
+                    for tp in assigned
+                )
+                kafka_lag_g.set(lag)
+        except Exception:
+            pass
+
+        # Flush condition
+        now = time.time()
+        if len(buffer) >= FLUSH_EVENTS or (now - last_flush) >= FLUSH_SECS:
+            _flush(buffer)
+            total_consumed = 0
+            last_flush = now
+
+    # Graceful shutdown — drain remaining buffer
+    log.info("Shutdown: flushing %d remaining events", len(buffer))
+    _flush(buffer)
+    consumer.close()
+    log.info("Worker shut down cleanly")
+
+
+if __name__ == "__main__":
+    main()

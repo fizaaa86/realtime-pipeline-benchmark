@@ -1,0 +1,39 @@
+# SSH keys — NEVER commit private keys
+*.pem
+*.key
+*.ppk
+
+# Terraform state and sensitive files
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Spark checkpoints (live state, not source code)
+checkpoints/
+/tmp/
+
+# Logs
+*.log

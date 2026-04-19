@@ -1,0 +1,40 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # Scrape EC2-2 itself (always present — k3s pods + local consumer)
+  - job_name: 'spark_pipeline_local'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+
+  # Auto-discover all ASG consumer instances via EC2 API.
+  # Prometheus queries AWS for instances tagged Project=edtech-pipeline and
+  # scrapes port 8000 on each one — no manual IP updates needed when ASG scales.
+  # Requires: IAM role on EC2-2 to have ec2:DescribeInstances permission.
+  - job_name: 'spark_pipeline_asg'
+    ec2_sd_configs:
+      - region: ap-south-1
+        port: 8000
+        filters:
+          - name: "tag:Project"
+            values: ["edtech-pipeline"]
+          - name: "tag:Name"
+            values: ["edtech-consumer-asg"]
+          - name: "instance-state-name"
+            values: ["running"]
+    relabel_configs:
+      # Use the private IP so Prometheus reaches ASG instances inside the VPC
+      - source_labels: [__meta_ec2_private_ip]
+        target_label: __address__
+        replacement: '${1}:8000'
+      # Carry the instance ID as a label for easy debugging in Grafana
+      - source_labels: [__meta_ec2_instance_id]
+        target_label: instance_id
+    metrics_path: '/metrics'
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

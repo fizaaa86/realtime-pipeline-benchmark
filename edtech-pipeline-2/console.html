@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdTech Pipeline Console</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#0d0f12; --bg2:#13171d; --bg3:#1a1f28; --border:#252b36;
+    --accent:#3ecf8e; --accent2:#f5a623; --red:#ff5f57; --blue:#58a6ff;
+    --purple:#a78bfa; --dim:#4a5568; --text:#c9d1d9; --text-dim:#6e7681;
+    --mono:'JetBrains Mono',monospace; --sans:'DM Sans',sans-serif;
+  }
+  html,body { height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; }
+
+  .shell { display:grid; grid-template-columns:300px 1fr; grid-template-rows:48px 1fr; height:100vh; }
+
+  /* topbar */
+  .topbar { grid-column:1/-1; display:flex; align-items:center; gap:14px; padding:0 20px; background:var(--bg2); border-bottom:1px solid var(--border); }
+  .topbar-dot { width:10px; height:10px; border-radius:50%; background:var(--dim); transition:background .3s; }
+  .topbar-dot.live { background:var(--accent); box-shadow:0 0 8px var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .topbar-title { font-family:var(--mono); font-weight:700; font-size:13px; color:var(--accent); letter-spacing:.08em; }
+  .topbar-sub { font-size:11px; color:var(--text-dim); margin-left:4px; }
+  .topbar-stats { margin-left:auto; display:flex; gap:24px; }
+  .stat { text-align:right; }
+  .stat-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--text); }
+  .stat-val.green { color:var(--accent); } .stat-val.red { color:var(--red); }
+  .stat-lbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-top:1px; }
+
+  /* controls */
+  .controls { background:var(--bg2); border-right:1px solid var(--border); padding:18px 16px; overflow-y:auto; display:flex; flex-direction:column; gap:18px; }
+  .section-label { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+  .mode-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .mode-tab { padding:8px 0; border:1px solid var(--border); border-radius:6px; background:var(--bg3); cursor:pointer; font-family:var(--mono); font-size:11px; color:var(--text-dim); text-align:center; transition:all .15s; }
+  .mode-tab:hover { border-color:var(--dim); color:var(--text); }
+  .mode-tab.active { border-color:var(--accent); color:var(--accent); background:rgba(62,207,142,.08); }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:11px; color:var(--text-dim); display:flex; justify-content:space-between; }
+  .field label span { font-family:var(--mono); color:var(--accent); }
+  input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:var(--bg3); border-radius:2px; outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; }
+  input[type=number],input[type=text] { width:100%; padding:7px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; outline:none; }
+  input[type=number]:focus,input[type=text]:focus { border-color:var(--accent); }
+  select { width:100%; padding:7px 10px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:var(--mono); font-size:12px; outline:none; cursor:pointer; }
+  select:focus { border-color:var(--accent); }
+  .event-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .evt-check { display:flex; align-items:center; gap:7px; cursor:pointer; }
+  .evt-check input { display:none; }
+  .evt-box { width:14px; height:14px; border-radius:3px; border:1px solid var(--border); background:var(--bg3); display:grid; place-items:center; transition:all .15s; flex-shrink:0; }
+  .evt-check input:checked + .evt-box { background:var(--accent); border-color:var(--accent); }
+  .evt-check input:checked + .evt-box::after { content:''; width:6px; height:6px; border-radius:1px; background:#000; }
+  .evt-name { font-family:var(--mono); font-size:10px; color:var(--text-dim); }
+  .evt-check:hover .evt-name { color:var(--text); }
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; }
+  .toggle-row label { font-size:11px; color:var(--text-dim); }
+  .toggle { position:relative; width:32px; height:18px; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:var(--bg3); border:1px solid var(--border); border-radius:9px; cursor:pointer; transition:.2s; }
+  .toggle-slider::before { content:''; position:absolute; width:12px; height:12px; top:2px; left:2px; background:var(--dim); border-radius:50%; transition:.2s; }
+  .toggle input:checked + .toggle-slider { background:rgba(62,207,142,.2); border-color:var(--accent); }
+  .toggle input:checked + .toggle-slider::before { background:var(--accent); transform:translateX(14px); }
+  .mode-panel { display:none; flex-direction:column; gap:12px; }
+  .mode-panel.visible { display:flex; }
+  /* sasl panel hidden by default */
+  .sasl-panel { display:none; flex-direction:column; gap:12px; }
+  .sasl-panel.visible { display:flex; }
+  /* advanced panel — collapsed by default */
+  .adv-header { cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+  .adv-header:hover { color:var(--text); }
+  .adv-arrow { font-size:9px; color:var(--dim); transition:transform .2s; }
+  .adv-arrow.open { transform:rotate(90deg); }
+  .adv-body { display:none; flex-direction:column; gap:12px; margin-top:8px; }
+  .adv-body.open { display:flex; }
+  .btn-start { width:100%; padding:11px; border-radius:8px; background:var(--accent); color:#000; border:none; cursor:pointer; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; transition:all .15s; }
+  .btn-start:hover { background:#5bdfaa; }
+  .btn-start:disabled { background:var(--dim); color:var(--text-dim); cursor:not-allowed; }
+  .btn-stop { width:100%; padding:11px; border-radius:8px; background:transparent; color:var(--red); border:1px solid var(--red); cursor:pointer; font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.04em; transition:all .15s; }
+  .btn-stop:hover { background:rgba(255,95,87,.1); }
+  .cmd-preview { padding:10px 12px; background:var(--bg3); border-radius:6px; border:1px solid var(--border); font-family:var(--mono); font-size:10px; color:var(--text-dim); word-break:break-all; line-height:1.7; }
+  .cmd-preview span { color:var(--accent); }
+  .divider { height:1px; background:var(--border); }
+
+  /* right pane */
+  .right-pane { display:flex; flex-direction:column; overflow:hidden; }
+
+  /* metrics strip */
+  .metrics-strip { display:grid; grid-template-columns:repeat(9,1fr); border-bottom:1px solid var(--border); flex-shrink:0; }
+  .mcard { padding:10px 14px; border-right:1px solid var(--border); }
+  .mcard:last-child { border-right:none; }
+  .mcard-val { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--text); line-height:1; display:block; margin-bottom:4px; }
+  .mcard-val.green  { color:var(--accent); }
+  .mcard-val.red    { color:var(--red); }
+  .mcard-val.blue   { color:var(--blue); }
+  .mcard-val.orange { color:var(--accent2); }
+  .mcard-val.purple { color:var(--purple); }
+  .mcard-lbl { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.1em; font-weight:600; }
+
+  /* class roster */
+  .class-roster { display:flex; gap:8px; padding:10px 14px; overflow-x:auto; border-bottom:1px solid var(--border); flex-shrink:0; align-items:stretch; }
+  .class-roster::-webkit-scrollbar { height:3px; }
+  .class-roster::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .roster-empty { font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; padding:0 4px; }
+  .class-card { flex-shrink:0; min-width:150px; max-width:190px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
+  .class-card-name { font-family:var(--mono); font-size:10px; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .class-card-meta { font-size:10px; color:var(--text-dim); }
+  .class-card-students { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--accent); line-height:1; }
+  .class-card-bar { height:3px; border-radius:2px; background:var(--bg); overflow:hidden; }
+  .class-card-bar-fill { height:100%; border-radius:2px; transition:width .5s; }
+  .diff-easy   { color:#3ecf8e; } .diff-medium { color:#f5a623; } .diff-hard { color:#ff5f57; }
+  .bar-easy    { background:#3ecf8e; } .bar-medium { background:#f5a623; } .bar-hard { background:#ff5f57; }
+
+  /* phase banner */
+  .phase-banner { display:none; align-items:center; gap:10px; padding:6px 16px; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.1em; flex-shrink:0; border-bottom:1px solid var(--border); }
+  .phase-banner.visible { display:flex; }
+  .phase-banner.normal   { background:rgba(62,207,142,.06); color:var(--accent); }
+  .phase-banner.spike    { background:rgba(245,166,35,.10); color:var(--accent2); }
+  .phase-banner.recovery { background:rgba(88,166,255,.06); color:var(--blue); }
+  .phase-banner.failure  { background:rgba(255,95,87,.08);  color:var(--red); }
+  .phase-dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 1.2s infinite; }
+
+  /* terminal */
+  .terminal { display:flex; flex-direction:column; background:var(--bg); overflow:hidden; flex:1; }
+  .term-header { display:flex; align-items:center; gap:10px; padding:8px 16px; border-bottom:1px solid var(--border); background:var(--bg2); flex-shrink:0; }
+  .term-title { font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+  .uptime-badge { display:none; font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(62,207,142,.1); color:var(--accent); border:1px solid rgba(62,207,142,.2); }
+  .term-clear { margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--dim); cursor:pointer; padding:3px 8px; border:1px solid var(--border); border-radius:4px; background:none; transition:.15s; }
+  .term-clear:hover { color:var(--text); border-color:var(--dim); }
+  .term-body { flex:1; overflow-y:auto; padding:12px 16px; font-family:var(--mono); font-size:12px; line-height:1.8; }
+  .log-line { display:flex; gap:10px; align-items:baseline; }
+  .log-ts  { color:var(--dim); flex-shrink:0; }
+  .log-lvl { flex-shrink:0; font-weight:600; width:38px; }
+  .log-lvl.INFO  { color:var(--blue); }
+  .log-lvl.WARN  { color:var(--accent2); }
+  .log-lvl.ERROR { color:var(--red); }
+  .log-msg { color:var(--text); word-break:break-all; }
+  .log-msg em        { color:var(--accent); font-style:normal; }
+  .log-msg .hl-cls   { color:var(--accent2); }
+  .log-msg .hl-evict { color:var(--red); }
+  .log-msg .hl-spike { color:var(--accent2); font-weight:600; }
+  .log-msg .hl-norm  { color:var(--accent);  font-weight:600; }
+  .log-msg .hl-recv  { color:var(--blue);    font-weight:600; }
+  .log-msg .hl-fail  { color:var(--red);     font-weight:600; }
+  .log-msg .hl-mode  { color:var(--purple); }
+  .log-msg .hl-key   { color:var(--text-dim); }
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- topbar -->
+  <header class="topbar">
+    <div class="topbar-dot" id="statusDot"></div>
+    <div>
+      <div class="topbar-title">EDTECH PIPELINE CONSOLE</div>
+      <div class="topbar-sub">localhost → Kafka (EC2) → Consumer → Storage</div>
+    </div>
+    <div class="topbar-stats">
+      <div class="stat"><div class="stat-val green" id="statSent">0</div><div class="stat-lbl">Events sent</div></div>
+      <div class="stat"><div class="stat-val red"   id="statFailed">0</div><div class="stat-lbl">Failed</div></div>
+      <div class="stat"><div class="stat-val"       id="statUptime">--</div><div class="stat-lbl">Uptime</div></div>
+      <div class="stat"><div class="stat-val"       id="statStatus">IDLE</div><div class="stat-lbl">Status</div></div>
+    </div>
+  </header>
+
+  <!-- controls (left) -->
+  <aside class="controls">
+    <div>
+      <div class="section-label">Mode</div>
+      <div class="mode-tabs">
+        <div class="mode-tab active" data-mode="continuous">continuous</div>
+        <div class="mode-tab" data-mode="spike">spike</div>
+        <div class="mode-tab" data-mode="failure">failure</div>
+        <div class="mode-tab" data-mode="file">file</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Events / second <span id="rateVal">10</span></label>
+      <input type="range" id="rateSlider" min="1" max="500" value="10"
+             oninput="document.getElementById('rateVal').textContent=this.value;updatePreview()">
+    </div>
+
+    <!-- ── User pool size ─────────────────────────────────────────────────── -->
+    <div class="field">
+      <label>Simulated users <span id="usersVal">200</span></label>
+      <input type="range" id="usersSlider" min="50" max="10000" step="50" value="200"
+             oninput="document.getElementById('usersVal').textContent=(+this.value).toLocaleString();updatePreview()">
+    </div>
+
+    <div class="mode-panel" id="panel-spike">
+      <div class="section-label">Spike config</div>
+      <div class="field"><label>Spike rate (ev/s) <span id="spikeRateVal">50</span></label><input type="range" id="spikeRate" min="10" max="2000" value="50" oninput="document.getElementById('spikeRateVal').textContent=this.value;updatePreview()"></div>
+      <div class="field"><label>Pre-spike (s) <span id="preVal">60</span></label><input type="range" id="preSpike" min="10" max="300" value="60" oninput="document.getElementById('preVal').textContent=this.value;updatePreview()"></div>
+      <div class="field"><label>Spike duration (s) <span id="spikeDurVal">60</span></label><input type="range" id="spikeDur" min="10" max="300" value="60" oninput="document.getElementById('spikeDurVal').textContent=this.value;updatePreview()"></div>
+      <div class="field"><label>Post-spike (s) <span id="postVal">60</span></label><input type="range" id="postSpike" min="10" max="300" value="60" oninput="document.getElementById('postVal').textContent=this.value;updatePreview()"></div>
+    </div>
+
+    <div class="mode-panel" id="panel-failure">
+      <div class="section-label">Failure sim config</div>
+      <div class="field"><label>Normal before failure (s) <span id="failAfterVal">60</span></label><input type="range" id="failAfter" min="10" max="300" value="60" oninput="document.getElementById('failAfterVal').textContent=this.value;updatePreview()"></div>
+      <div class="field"><label>Pause duration (s) <span id="failPauseVal">30</span></label><input type="range" id="failPause" min="5" max="120" value="30" oninput="document.getElementById('failPauseVal').textContent=this.value;updatePreview()"></div>
+    </div>
+
+    <div class="mode-panel" id="panel-file">
+      <div class="section-label">File output config</div>
+      <div class="field"><label>Event count</label><input type="number" id="fileCount" value="10000" min="100" oninput="updatePreview()"></div>
+      <div class="field"><label>Output filename</label><input type="text" id="fileOutput" value="events.json" oninput="updatePreview()"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Event types</div>
+      <div class="event-grid">
+        <label class="evt-check"><input type="checkbox" value="login"         checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">login</span></label>
+        <label class="evt-check"><input type="checkbox" value="logout"        checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">logout</span></label>
+        <label class="evt-check"><input type="checkbox" value="class_join"    checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">class_join</span></label>
+        <label class="evt-check"><input type="checkbox" value="class_leave"   checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">class_leave</span></label>
+        <label class="evt-check"><input type="checkbox" value="session_start" checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">session_start</span></label>
+        <label class="evt-check"><input type="checkbox" value="session_end"   checked onchange="updatePreview()"><div class="evt-box"></div><span class="evt-name">session_end</span></label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Kafka config ──────────────────────────────────────────────────── -->
+    <div>
+      <div class="section-label">Kafka config</div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Bootstrap servers</label>
+        <input type="text" id="bootstrapServers" value=""
+               placeholder="run: terraform output ec2_1_eip" oninput="updatePreview()">
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Topic</label>
+        <input type="text" id="kafkaTopic" value="edtech-events" oninput="updatePreview()">
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Security protocol</label>
+        <select id="securityProtocol" onchange="onSecurityChange();updatePreview()">
+          <option value="PLAINTEXT" selected>PLAINTEXT</option>
+          <option value="SASL_PLAINTEXT">SASL_PLAINTEXT</option>
+          <option value="SSL">SSL</option>
+          <option value="SASL_SSL">SASL_SSL</option>
+        </select>
+      </div>
+      <!-- SASL fields — shown only when SASL protocol is selected -->
+      <div class="sasl-panel" id="saslPanel">
+        <div class="field">
+          <label>SASL mechanism</label>
+          <select id="saslMechanism" onchange="updatePreview()">
+            <option value="PLAIN">PLAIN</option>
+            <option value="SCRAM-SHA-256">SCRAM-SHA-256</option>
+            <option value="SCRAM-SHA-512">SCRAM-SHA-512</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="saslUsername" placeholder="kafka-user" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="text" id="saslPassword" placeholder="••••••••" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-row">
+      <label>Dry run (no Kafka)</label>
+      <label class="toggle"><input type="checkbox" id="dryRun" onchange="updatePreview()"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ── Advanced (collapsible) ──────────────────────────────────────────── -->
+    <div>
+      <div class="section-label adv-header" onclick="toggleAdvanced()">
+        Advanced <span class="adv-arrow" id="advArrow">▶</span>
+      </div>
+      <div class="adv-body" id="advBody">
+        <div class="field">
+          <label>Regions</label>
+          <input type="text" id="advRegions" placeholder="Hyderabad,Mumbai,Delhi,…" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Course IDs</label>
+          <input type="text" id="advCourses" placeholder="csg527,csg511,csg610" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Difficulty</label>
+          <select id="advDifficulty" onchange="updatePreview()">
+            <option value="all" selected>all</option>
+            <option value="easy">easy</option>
+            <option value="medium">medium</option>
+            <option value="hard">hard</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Premium % <span id="subSplitVal">40</span>%</label>
+          <input type="range" id="subSplitSlider" min="0" max="100" value="40"
+                 oninput="document.getElementById('subSplitVal').textContent=this.value;updatePreview()">
+        </div>
+        <div class="field">
+          <label>Max classes <span id="maxClassesVal">6</span></label>
+          <input type="range" id="maxClassesSlider" min="1" max="20" value="6"
+                 oninput="document.getElementById('maxClassesVal').textContent=this.value;updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="section-label">Command preview</div>
+      <div class="cmd-preview" id="cmdPreview">python generator.py</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-start" id="btnStart" onclick="startGenerator()">▶ START GENERATOR</button>
+    <button class="btn-stop"  id="btnStop"  onclick="stopGenerator()" disabled>■ STOP</button>
+  </aside>
+
+  <!-- right pane -->
+  <div class="right-pane">
+
+    <!-- live metrics strip -->
+    <div class="metrics-strip">
+      <div class="mcard"><span class="mcard-val green"  id="mSent">0</span><span class="mcard-lbl">Events sent</span></div>
+      <div class="mcard"><span class="mcard-val red"    id="mFailed">0</span><span class="mcard-lbl">Failed</span></div>
+      <div class="mcard"><span class="mcard-val blue"   id="mRate">0</span><span class="mcard-lbl">Actual ev/s</span></div>
+      <div class="mcard"><span class="mcard-val green"  id="mOnline">—</span><span class="mcard-lbl">Online users</span></div>
+      <div class="mcard"><span class="mcard-val green"  id="mStudents">—</span><span class="mcard-lbl">In class</span></div>
+      <div class="mcard"><span class="mcard-val"        id="mClasses">—</span><span class="mcard-lbl">Active classes</span></div>
+      <div class="mcard"><span class="mcard-val orange" id="mPool">200</span><span class="mcard-lbl">User pool</span></div>
+      <div class="mcard"><span class="mcard-val purple" id="mPhase">—</span><span class="mcard-lbl">Phase</span></div>
+      <div class="mcard"><span class="mcard-val green"  id="mSurge">NORMAL</span><span class="mcard-lbl">Surge</span></div>
+    </div>
+
+    <!-- class roster -->
+    <div class="class-roster" id="classRoster">
+      <span class="roster-empty">No active classes — start the generator</span>
+    </div>
+
+    <!-- phase banner -->
+    <div class="phase-banner" id="phaseBanner">
+      <div class="phase-dot"></div>
+      <span id="phaseBannerText">NORMAL LOAD</span>
+    </div>
+
+    <!-- terminal -->
+    <div class="terminal">
+      <div class="term-header">
+        <span class="term-title">generator output</span>
+        <span class="uptime-badge" id="uptimeBadge">00:00</span>
+        <button class="term-clear" onclick="clearLogs()">clear</button>
+      </div>
+      <div class="term-body" id="termBody">
+        <div class="log-line">
+          <span class="log-ts">--:--:--</span>
+          <span class="log-lvl INFO">INFO</span>
+          <span class="log-msg">EdTech Pipeline Console ready. Configure and press START.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ── Advanced panel toggle ──────────────────────────────────────────────────────
+function toggleAdvanced() {
+  const body  = document.getElementById('advBody');
+  const arrow = document.getElementById('advArrow');
+  const open  = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
+// ── Mode switching ─────────────────────────────────────────────────────────────
+let currentMode = 'continuous';
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('visible'));
+    const panel = document.getElementById('panel-' + currentMode);
+    if (panel) panel.classList.add('visible');
+    updatePreview();
+  });
+});
+
+// ── SASL visibility ────────────────────────────────────────────────────────────
+function onSecurityChange() {
+  const proto = document.getElementById('securityProtocol').value;
+  const panel = document.getElementById('saslPanel');
+  panel.classList.toggle('visible', proto.includes('SASL'));
+}
+
+// ── Config + preview ───────────────────────────────────────────────────────────
+function getConfig() {
+  const events = [...document.querySelectorAll('.evt-check input:checked')].map(i => i.value);
+  const proto  = document.getElementById('securityProtocol').value;
+  const hasSasl = proto.includes('SASL');
+  return {
+    mode:    currentMode,
+    rate:    +document.getElementById('rateSlider').value,
+    users:   +document.getElementById('usersSlider').value,
+    events:  events.length === 6 ? [] : events,
+    dry_run: document.getElementById('dryRun').checked,
+    // Kafka
+    bootstrap_servers:  document.getElementById('bootstrapServers').value,
+    topic:              document.getElementById('kafkaTopic').value,
+    security_protocol:  proto,
+    sasl_mechanism:     hasSasl ? document.getElementById('saslMechanism').value : null,
+    sasl_username:      hasSasl ? document.getElementById('saslUsername').value  : null,
+    sasl_password:      hasSasl ? document.getElementById('saslPassword').value  : null,
+    // Spike
+    spike_rate:          +document.getElementById('spikeRate').value,
+    spike_duration:      +document.getElementById('spikeDur').value,
+    pre_spike_duration:  +document.getElementById('preSpike').value,
+    post_spike_duration: +document.getElementById('postSpike').value,
+    // Failure
+    failure_after: +document.getElementById('failAfter').value,
+    failure_pause: +document.getElementById('failPause').value,
+    // File
+    count:  +document.getElementById('fileCount').value,
+    output: document.getElementById('fileOutput').value,
+    // Advanced
+    regions:            document.getElementById('advRegions').value.trim() || null,
+    courses:            document.getElementById('advCourses').value.trim() || null,
+    difficulty:         document.getElementById('advDifficulty').value,
+    subscription_split: +document.getElementById('subSplitSlider').value / 100,
+    max_classes:        +document.getElementById('maxClassesSlider').value,
+  };
+}
+
+function updatePreview() {
+  const c = getConfig();
+  // Also update Pool card immediately on slider change
+  document.getElementById('mPool').textContent = c.users.toLocaleString();
+
+  let parts = ['python', 'generator.py',
+               '--mode',  c.mode,
+               '--rate',  c.rate,
+               '--users', c.users];
+  parts.push('--bootstrap-servers', c.bootstrap_servers, '--topic', c.topic);
+  if (c.security_protocol !== 'PLAINTEXT') parts.push('--security-protocol', c.security_protocol);
+  if (c.sasl_mechanism) parts.push('--sasl-mechanism', c.sasl_mechanism, '--sasl-username', c.sasl_username);
+  if (c.events.length)  parts.push('--events', ...c.events);
+  if (c.dry_run)        parts.push('--dry-run');
+  if (c.mode === 'spike')   parts.push('--spike-rate', c.spike_rate, '--pre-spike-duration', c.pre_spike_duration, '--spike-duration', c.spike_duration, '--post-spike-duration', c.post_spike_duration);
+  if (c.mode === 'failure') parts.push('--failure-after', c.failure_after, '--failure-pause', c.failure_pause);
+  if (c.mode === 'file')    parts.push('--count', c.count, '--output', c.output);
+  if (c.regions)                    parts.push('--regions', c.regions);
+  if (c.courses)                    parts.push('--courses', c.courses);
+  if (c.difficulty && c.difficulty !== 'all') parts.push('--difficulty', c.difficulty);
+  if (c.subscription_split !== 0.40) parts.push('--subscription-split', c.subscription_split);
+  if (c.max_classes !== 6)          parts.push('--max-classes', c.max_classes);
+
+  const html = parts.map((p, i) => {
+    if (i < 2) return `<span>${p}</span>`;
+    if (String(p).startsWith('--')) return `<br>&nbsp;&nbsp;<span style="color:#58a6ff">${p}</span>`;
+    return ` ${p}`;
+  }).join('');
+  document.getElementById('cmdPreview').innerHTML = html;
+}
+updatePreview();
+
+// ── Start / Stop ───────────────────────────────────────────────────────────────
+async function startGenerator() {
+  document.getElementById('btnStart').disabled = true;
+  resetCounters();
+  const r = await fetch('/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(getConfig()) });
+  const d = await r.json();
+  if (d.ok) {
+    document.getElementById('btnStop').disabled = false;
+    appendLog({ ts: now(), level:'INFO', msg:`Process started (PID ${d.pid})` });
+  } else {
+    appendLog({ ts: now(), level:'ERROR', msg: d.error });
+    document.getElementById('btnStart').disabled = false;
+  }
+}
+
+async function stopGenerator() {
+  document.getElementById('btnStop').disabled = true;
+  const r = await fetch('/stop', { method:'POST' });
+  const d = await r.json();
+  if (!d.ok) appendLog({ ts: now(), level:'ERROR', msg: d.error });
+}
+
+function clearLogs() { document.getElementById('termBody').innerHTML = ''; }
+function now() { return new Date().toTimeString().slice(0,8); }
+
+// ── Session counters ───────────────────────────────────────────────────────────
+function resetCounters() {
+  document.getElementById('mRate').textContent     = '0';
+  document.getElementById('mOnline').textContent   = '—';
+  document.getElementById('mStudents').textContent = '—';
+  document.getElementById('mClasses').textContent  = '—';
+  document.getElementById('mPhase').textContent    = '—';
+  const surgeEl = document.getElementById('mSurge');
+  surgeEl.textContent  = 'NORMAL';
+  surgeEl.className    = 'mcard-val green';
+  renderClassRoster({});
+  hidePhaseBanner();
+}
+
+// ── Phase banner ───────────────────────────────────────────────────────────────
+function showPhaseBanner(label, type) {
+  const b = document.getElementById('phaseBanner');
+  b.className = 'phase-banner visible ' + type;
+  document.getElementById('phaseBannerText').textContent = label;
+}
+function hidePhaseBanner() { document.getElementById('phaseBanner').className = 'phase-banner'; }
+
+// ── Log coloriser ──────────────────────────────────────────────────────────────
+function colorise(raw) {
+  return raw
+    .replace(/\b(\d+)\b/g, '<em>$1</em>')
+    .replace(/(\w+=)(<em>)/g, '<span class="hl-key">$1</span>$2')
+    .replace(/(Class\s+\w+\s+\()([^)]+)(\))/g, '$1<span class="hl-cls">$2</span>$3')
+    .replace(/(evicting\s+<em>\d+<\/em>\s+students)/gi, '<span class="hl-evict">$1</span>')
+    .replace(/\[SPIKE\]/g,    '<span class="hl-spike">[SPIKE]</span>')
+    .replace(/\[NORMAL\]/g,   '<span class="hl-norm">[NORMAL]</span>')
+    .replace(/\[RECOVERY\]/g, '<span class="hl-recv">[RECOVERY]</span>')
+    .replace(/(FAILURE SIMULATED[^<]*)/g,  '<span class="hl-fail">$1</span>')
+    .replace(/(RECOVERY: resuming[^<]*)/g, '<span class="hl-recv">$1</span>')
+    .replace(/(Continuous mode|Spike mode|Failure-sim|File mode)/g, '<span class="hl-mode">$1</span>');
+}
+
+// ── Parse log → phase detection ────────────────────────────────────────────────
+function parseMetrics(msg) {
+  // v4 phase log patterns
+  if (/Phase 1.*normal load/i.test(msg))               setPhase('NORMAL',   '◼ NORMAL LOAD',      'normal');
+  if (/Phase 2.*SPIKE/i.test(msg))                     setPhase('SPIKE',    '▲ TRAFFIC SPIKE',     'spike');
+  if (/Phase 3.*recovery/i.test(msg))                  setPhase('RECOVERY', '▼ RECOVERY',          'recovery');
+  if (/FAILURE SIMULATED/i.test(msg))                  setPhase('FAILURE',  '✕ FAILURE SIMULATED', 'failure');
+  if (/RECOVERY.*resuming/i.test(msg))                 setPhase('RECOVERY', '▼ RECOVERY',          'recovery');
+  if (/\[NORMAL\].*phase complete/i.test(msg))         setPhase('NORMAL',   '◼ NORMAL LOAD',      'normal');
+  if (/\[SPIKE\].*phase complete/i.test(msg))          setPhase('RECOVERY', '▼ RECOVERY',          'recovery');
+  if (/Continuous mode/i.test(msg))                    setPhase('NORMAL',   '◼ CONTINUOUS',        'normal');
+  if (/Generator process exited/i.test(msg)) {
+    document.getElementById('mPhase').textContent = '—';
+    hidePhaseBanner();
+  }
+}
+
+// ── Class roster renderer ──────────────────────────────────────────────────────
+function renderClassRoster(classes) {
+  const roster  = document.getElementById('classRoster');
+  const entries = Object.entries(classes);
+  if (!entries.length) {
+    roster.innerHTML = '<span class="roster-empty">Waiting for class data…</span>';
+    return;
+  }
+  entries.sort((a, b) => b[1].students - a[1].students);
+  const maxStudents = Math.max(...entries.map(([,c]) => c.students), 1);
+  roster.innerHTML = entries.map(([cid, cls]) => {
+    const pct  = Math.round(cls.students / maxStudents * 100);
+    const dCls = `diff-${cls.difficulty}`;
+    const bCls = `bar-${cls.difficulty}`;
+    return `<div class="class-card">
+      <div class="class-card-name" title="${cls.name}">${cls.name}</div>
+      <div class="class-card-meta"><span class="${dCls}">${cls.difficulty}</span> · ${cls.category}</div>
+      <div class="class-card-students">${cls.students} <span style="font-size:10px;color:var(--text-dim);font-weight:400">students</span></div>
+      <div class="class-card-bar"><div class="class-card-bar-fill ${bCls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function setPhase(label, bannerText, bannerType) {
+  document.getElementById('mPhase').textContent = label;
+  showPhaseBanner(bannerText, bannerType);
+}
+
+// ── Append log line ────────────────────────────────────────────────────────────
+function appendLog(entry) {
+  parseMetrics(entry.msg);
+  const body = document.getElementById('termBody');
+  const div  = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `<span class="log-ts">${entry.ts}</span><span class="log-lvl ${entry.level}">${entry.level}</span><span class="log-msg">${colorise(entry.msg)}</span>`;
+  body.appendChild(div);
+  if (body.scrollHeight - body.scrollTop < body.clientHeight + 100) body.scrollTop = body.scrollHeight;
+}
+
+// ── SSE stream ─────────────────────────────────────────────────────────────────
+const es = new EventSource('/logs');
+es.onmessage = e => { try { appendLog(JSON.parse(e.data)); } catch(_){} };
+
+// ── Status polling ─────────────────────────────────────────────────────────────
+setInterval(async () => {
+  try {
+    const s = await (await fetch('/status')).json();
+
+    document.getElementById('statSent').textContent   = s.sent.toLocaleString();
+    document.getElementById('statFailed').textContent = s.failed.toLocaleString();
+    document.getElementById('statStatus').textContent = s.status.toUpperCase();
+    document.getElementById('mSent').textContent      = s.sent.toLocaleString();
+    document.getElementById('mFailed').textContent    = s.failed.toLocaleString();
+
+    // Rate: use server-computed rate_actual (derived from generator's own counters)
+    if (s.status === 'running') {
+      const r = s.rate_actual ?? 0;
+      document.getElementById('mRate').textContent = r > 0 ? r.toFixed(1) : '…';
+    }
+
+    if (s.users) document.getElementById('mPool').textContent = (+s.users).toLocaleString();
+
+    if (s.classes) renderClassRoster(s.classes);
+
+    // Online users = total non-offline (online + in_class + in_session)
+    document.getElementById('mOnline').textContent   = (s.online_users   ?? '—').toLocaleString();
+    document.getElementById('mStudents').textContent = (s.active_students ?? '—').toLocaleString();
+    document.getElementById('mClasses').textContent  = s.total_classes ?? '—';
+
+    const surgeEl = document.getElementById('mSurge');
+    if (s.surge_detected) {
+      surgeEl.textContent = 'SURGE';
+      surgeEl.className   = 'mcard-val orange';
+    } else {
+      surgeEl.textContent = 'NORMAL';
+      surgeEl.className   = 'mcard-val green';
+    }
+
+    const dot   = document.getElementById('statusDot');
+    const badge = document.getElementById('uptimeBadge');
+
+    if (s.status === 'running') {
+      dot.classList.add('live');
+      badge.style.display = 'inline-block';
+      const m   = String(Math.floor(s.uptime / 60)).padStart(2,'0');
+      const sec = String(s.uptime % 60).padStart(2,'0');
+      badge.textContent = `${m}:${sec}`;
+      document.getElementById('statUptime').textContent = `${m}:${sec}`;
+    } else {
+      dot.classList.remove('live');
+      badge.style.display = 'none';
+      if (s.status === 'idle') {
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnStop').disabled  = true;
+        document.getElementById('statStatus').textContent = 'IDLE';
+        document.getElementById('mRate').textContent = '0';
+        document.getElementById('mOnline').textContent = '—';
+      }
+    }
+  } catch(_){}
+}, 1500);
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edtech-storage-worker
+  namespace: edtech-pipeline
+  labels:
+    app: edtech-storage-worker
+    component: storage
+spec:
+  # KEDA ScaledObject (keda-scaledobject.yaml) overrides this replica count
+  # based on live Kafka consumer group lag. This value is the initial baseline.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edtech-storage-worker
+  template:
+    metadata:
+      labels:
+        app: edtech-storage-worker
+        component: storage
+    spec:
+      # Graceful termination: flush in-flight buffer to S3 before pod dies.
+      # SIGTERM triggers the shutdown handler in storage_worker.py.
+      terminationGracePeriodSeconds: 60
+
+      # ── Init container: pre-install Python packages ────────────────────────
+      # Runs once per pod start. Output is written to a shared emptyDir volume
+      # so the main container does not need internet access at startup.
+      initContainers:
+        - name: install-deps
+          image: python:3.11-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - pip install --quiet --no-cache-dir
+                kafka-python boto3 pyarrow prometheus_client lz4
+                -t /packages
+          volumeMounts:
+            - name: python-packages
+              mountPath: /packages
+
+      containers:
+        - name: storage-worker
+          image: python:3.11-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - PYTHONPATH=/packages python3 /scripts/storage_worker.py
+          envFrom:
+            - configMapRef:
+                name: edtech-config
+          env:
+            # Override IS_MASTER_CONSUMER — pods are NOT master (Redis belongs to EC2-2 Spark)
+            - name: IS_MASTER_CONSUMER
+              value: "false"
+            # Storage is ENABLED in pods — they own S3 + DynamoDB
+            - name: STORAGE_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 8001    # Prometheus metrics (Spark master uses 8000)
+              name: metrics
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: python-packages
+              mountPath: /packages
+            - name: worker-script
+              mountPath: /scripts
+          # Liveness: restart if Prometheus endpoint stops responding
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 8001
+            initialDelaySeconds: 90   # init container takes ~60s for pip install
+            periodSeconds: 30
+            failureThreshold: 3
+          # Readiness: only send traffic once the worker is processing
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 8001
+            initialDelaySeconds: 90
+            periodSeconds: 15
+
+      volumes:
+        - name: python-packages
+          emptyDir: {}
+        - name: worker-script
+          configMap:
+            name: edtech-storage-worker-script

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edtech-config
+  namespace: edtech-pipeline
+data:
+  # KAFKA_BOOTSTRAP is auto-updated by scripts/apply_eip.sh after `terraform apply`.
+  # EC2-1 has a permanent Elastic IP (see `terraform output ec2_1_eip`).
+  # Do NOT hardcode an IP here — run apply_eip.sh to set the correct value.
+  KAFKA_BOOTSTRAP: "3.7.163.17:9093"
+  KAFKA_TOPIC: "edtech-events"
+  PRIORITY_TOPIC: "edtech-priority"
+  REDIS_HOST: "localhost"
+  REDIS_PORT: "6379"
+  S3_BUCKET: "edtech-pipeline-data-c956dd9c"
+  AWS_REGION: "ap-south-1"
+  TRIGGER_SECS: "10"
+  SPARK_MASTER: "local[2]"
+
+  # ── storage-worker pod settings ────────────────────────────────────────────
+  # Consumer group for k8s storage worker pods.
+  # Separate from Spark's monitoring group so both consumers see all events
+  # independently: Spark → Redis/Prometheus; storage-worker → S3/DynamoDB.
+  CONSUMER_GROUP_ID: "edtech-storage-group"
+  # Flush to S3 when buffer hits 5000 events OR 5 minutes elapse (whichever first)
+  FLUSH_EVENTS: "5000"
+  FLUSH_SECS: "300"
+  # Prometheus port for storage-worker pods (Spark master uses 8000)
+  PROM_PORT: "8001"
+  # IS_MASTER_CONSUMER and STORAGE_ENABLED are set per-pod in the Deployment spec,
+  # not here, since they differ between the Spark master (systemd) and worker pods.

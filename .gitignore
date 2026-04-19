@@ -1,0 +1,16 @@
+# Credentials & secrets
+*.csv
+*.pem
+*.key
+*.env
+*.secret
+*accessKey*
+*credentials*
+*_secret*
+
+# macOS
+.DS_Store
+
+# Terraform
+*.tfplan
+tfplan
