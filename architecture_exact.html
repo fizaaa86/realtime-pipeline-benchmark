@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EdTech Pipeline — Exact Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body {
+    background: #0f0f0f;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    padding: 24px;
+    margin: 0;
+  }
+  h1 { color: #a0c4ff; font-size: 1.4rem; margin-bottom: 4px; }
+  p.sub { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+  .mermaid { background: #1a1a2e; border-radius: 12px; padding: 24px; }
+  .note { background: #1a1a2e; border-left: 4px solid #38bdf8; padding: 12px 16px; margin-top: 20px; border-radius: 4px; font-size: 0.85rem; color: #94a3b8; }
+  .note strong { color: #7dd3fc; }
+</style>
+</head>
+<body>
+<h1>EdTech Pipeline — Exact Architecture (Phase 3, derived from source code)</h1>
+<p class="sub">
+  Based on: generator.py &nbsp;|&nbsp; spark/stream_consumer.py &nbsp;|&nbsp;
+  spark/storage_worker.py &nbsp;|&nbsp; spark/intelligence.py &nbsp;|&nbsp;
+  spark/batch_reports.py &nbsp;|&nbsp; k8s/*.yaml &nbsp;|&nbsp;
+  terraform/main.tf &nbsp;|&nbsp; docker-compose.monitoring.yml
+</p>
+
+<div class="mermaid">
+%%{init: {'theme': 'dark', 'flowchart': {'curve': 'orthogonal', 'nodeSpacing': 45, 'rankSpacing': 65}}}%%
+flowchart LR
+
+  %% ── GENERATOR ──────────────────────────────────────────────────────────────
+  subgraph GEN_BOX["  EC2-1 — Generator  "]
+    direction TB
+    GEN["generator.py\n500 users · 10 courses\n30 ev/s normal\n300 ev/s spike mode\nkafka-python lz4"]
+  end
+
+  %% ── EC2-1 : KAFKA ──────────────────────────────────────────────────────────
+  subgraph EC21["  EC2-1 — Apache Kafka 4.1.1 KRaft  [3.7.163.17]  "]
+    direction TB
+    KB["Kafka Broker\n:9092 internal\n:9093 external"]
+    T1[("edtech-events\n10 partitions\n24h retention")]
+    T2[("edtech-priority\n3 partitions\nsurge overflow")]
+    KB --> T1
+    KB --> T2
+  end
+
+  %% ── EC2-2 : SPARK (MONITORING ONLY) ─────────────────────────────────────
+  subgraph EC22["  EC2-2 — Spark + k3s Control Plane  [52.66.142.159 · t3.medium · 20 GB]  "]
+    direction TB
+
+    subgraph SPARK_SVC["systemd: edtech-spark.service  ·  Consumer Group: edtech-monitoring-group"]
+      direction LR
+      CONS["Kafka readStream\ntrigger: 10s\nSTORAGE_ENABLED=false\ncheckpoint: /tmp/edtech-checkpoints\nmaxOffsetsPerTrigger: 30000"]
+      subgraph IL["Intelligence Layer"]
+        direction TB
+        SD["SurgeDetector\nrolling 5-min avg\nsurge if rate > 1.5×\nhysteresis: 6-batch hold\nroutes to edtech-priority"]
+        ABO["AdaptiveBatchOptimizer\n(monitoring metrics only)\ntracks s3_cost_stats in Redis"]
+      end
+      CONS --> IL
+    end
+
+    REDIS["Redis 7  :6379\n16 pipeline:* keys\nTTL-keyed MSET per batch\ndirect Grafana datasource"]
+
+    PMET["Prometheus Endpoint  :8000\nevents_processed_total\nkafka_consumer_lag\nactive_users · surge_detected\nbatch_duration_seconds\ns3_cost_reduction_pct"]
+
+    subgraph DOCKER["Docker Compose  (monitoring)"]
+      direction LR
+      PROM["Prometheus  :9090\nscrape :8000 every 15s\nretention: 2d / 80 MB"]
+      GRAF["Grafana  :3000\n20 panels · 4 sections\nredis-datasource plugin\nPrometheus datasource"]
+      PROM --> GRAF
+    end
+
+    BATCH["batch_reports.py\ncron: 0 0 * * * (midnight UTC)\nreads S3 Parquet (yesterday)\nwrites DailyReports to DynamoDB"]
+
+    subgraph K3S["k3s v1.31 Control Plane  +  KEDA v2.13.1"]
+      direction TB
+      KEDA_OBJ["KEDA ScaledObject\ntrigger: edtech-storage-group lag\ndesiredPods = ceil(lag / 100)\nminReplicas: 1 · maxReplicas: 10\npollingInterval: 15s\ncooldownPeriod: 120s"]
+      subgraph PODS["edtech-storage-worker Deployment  ·  Consumer Group: edtech-storage-group"]
+        direction LR
+        POD["storage_worker.py pods\n1–10 replicas (KEDA)\npython:3.11-slim  ~107 MB RAM\nflush ≥5000 events OR 5 min\nsession_timeout_ms: 45000\nPrometheus :8001"]
+      end
+      KEDA_OBJ --> PODS
+    end
+
+  end
+
+  %% ── ASG : TIER 2 NODE SCALING ───────────────────────────────────────────
+  subgraph ASG_BOX["  AWS ASG  edtech-consumer-asg  (Tier 2 Node Scaling)  "]
+    direction TB
+    CW["CloudWatch Alarm\nEC2-2 InstanceId CPU > 70%\nfor 2 consecutive minutes"]
+    ASG_NODE["t3.medium k3s agent nodes\n0–10 instances (desired=0)\ncooldown: 180s\nUserdata: read SSM → join k3s"]
+    CW --> ASG_NODE
+  end
+
+  %% ── AWS MANAGED ─────────────────────────────────────────────────────────
+  subgraph AWS["  AWS  ap-south-1  (IAM instance role — no hardcoded credentials)  "]
+    direction TB
+
+    SSM["SSM Parameter Store\n/edtech/k3s-token (SecureString)\nASG nodes read at boot to join cluster"]
+
+    subgraph S3B["Amazon S3  —  edtech-pipeline-data-c956dd9c"]
+      S3R["raw/year=…/month=…/day=…/hour=…/\n{epoch}_{uuid8}.parquet  (pod writes)\n{epoch}.parquet  (Spark legacy)"]
+      S3P["reports/daily/YYYY-MM-DD/\nreport.parquet  (batch job)"]
+    end
+
+    subgraph DDB["Amazon DynamoDB  (PAY_PER_REQUEST)"]
+      US["UserStats\nPK: user_id  SK: date\nwritten by storage_worker pods"]
+      CS["CourseStats\nPK: course_id  SK: date\nwritten by storage_worker pods"]
+      DR["DailyReports\nPK: report_date\nwritten by nightly batch job"]
+    end
+  end
+
+  %% ── EDGES ───────────────────────────────────────────────────────────────
+
+  GEN -- "JSON events · lz4\nkafka-python" --> T1
+
+  T1 -- "readStream\nedtech-monitoring-group" --> CONS
+
+  SD -- "surge: forward overflow\nclass_join + session_start" --> T2
+
+  SD -- "pipeline:surge_detected = 1/0" --> REDIS
+  ABO -- "pipeline:s3_cost_stats" --> REDIS
+  CONS -- "16 pipeline:* keys\nwindow metrics · TTL MSET" --> REDIS
+  CONS -- "Prometheus gauges\ncounters · histograms" --> PMET
+
+  PMET -- "scrape /metrics\nevery 15s" --> PROM
+  REDIS -- "redis-datasource\ndirect query" --> GRAF
+
+  T1 -- "readStream\nedtech-storage-group" --> POD
+
+  POD -- "flush Parquet\n≥5000 events OR 5min" --> S3R
+  POD -- "UpdateItem per flush" --> US
+  POD -- "UpdateItem per flush" --> CS
+  POD -- "Prometheus :8001\nworker_events_processed_total\nworker_s3_flushes_total\nworker_kafka_lag" --> PMET
+
+  BATCH -- "read yesterday\nS3 Parquet" --> S3R
+  BATCH -- "PutItem\nDailyReports" --> DR
+  BATCH -- "reports/daily/\n*.parquet" --> S3P
+
+  EC22 -- "EC2-2 CPU > 70%\nfor 2 min" --> CW
+  ASG_NODE -- "k3s agent join\nread SSM token\ndiscover EC2-2 via tag" --> SSM
+  ASG_NODE -- "join k3s cluster\nPending pods → Running" --> K3S
+
+</div>
+
+<div class="note">
+  <strong>Key architectural decisions (Phase 3):</strong>
+  <ul>
+    <li><strong>Consumer group split</strong>: <code>edtech-monitoring-group</code> (Spark → Redis, latency-sensitive) and <code>edtech-storage-group</code> (k8s pods → S3+DynamoDB, throughput-sensitive). Both receive ALL events independently.</li>
+    <li><strong>STORAGE_ENABLED=false on Spark</strong>: Spark no longer writes to S3 or DynamoDB. All durable storage is handled by <code>storage_worker.py</code> pods. Prevents duplicate writes.</li>
+    <li><strong>Two-tier scaling</strong>: Tier 1 = KEDA pods (15s response, ~40s 1→10), Tier 2 = ASG EC2 nodes (~3–4 min, only triggers when EC2-2 CPU &gt; 70% = pods pending). Scale-to-zero at baseline = zero idle EC2 cost.</li>
+    <li><strong>S3 file naming</strong>: Pod files have UUID suffix (<code>{epoch}_{uuid8}.parquet</code>) to distinguish from legacy Spark files. Hive-partitioned by year/month/day/hour.</li>
+    <li><strong>Race condition fix</strong>: <code>session_timeout_ms=45000</code> prevents pods being evicted during Kafka group rebalance when KEDA rapidly scales 1→10.</li>
+    <li><strong>CloudWatch watches EC2-2 InstanceId</strong> (not ASG avg CPU) — ASG starts at 0 instances, has no CPU data. EC2-2 is always running and its CPU reflects pod scheduling pressure.</li>
+  </ul>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+</script>
+</body>
+</html>
