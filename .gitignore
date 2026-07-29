@@ -14,3 +14,14 @@
 # Terraform
 *.tfplan
 tfplan
+
+# Screen recordings (2.3 GB) — demo videos, not source
+projectrecording/
+*.mov
+*.mp4
+
+# Terraform provider binaries and local state (649 MB)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
