@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdTech Pipeline — Complete Technical Deep Dive</title>
+<style>
+:root{
+ --bg:#f5f6f8; --page:#ffffff; --ink:#1f2937; --muted:#5b6472; --faint:#8a94a3;
+ --border:#e7eaef; --line:#eef1f5;
+ --accent:#7c3aed; --accent-ink:#6d28d9; --accent-soft:#f5f2fe;
+ --blue:#0284c7; --green:#16a34a; --amber:#b45309; --red:#dc2626; --teal:#0d9488;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.page{max-width:940px;margin:34px auto;background:var(--page);
+ border:1px solid var(--border);border-radius:20px;
+ box-shadow:0 1px 3px rgba(16,24,40,.04),0 14px 40px rgba(16,24,40,.06);
+ padding:56px 62px}
+.kicker{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.13em;
+ text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);
+ padding:6px 13px;border-radius:999px;margin-bottom:16px}
+h1{font-size:31px;line-height:1.18;margin:.05em 0 .35em;letter-spacing:-.015em;
+ font-weight:800;color:#111827}
+h2{font-size:21px;margin:2.6em 0 .85em;padding-top:1.3em;border-top:1px solid var(--line);
+ font-weight:700;color:#0f172a;letter-spacing:-.01em;scroll-margin-top:20px}
+h3{font-size:16.5px;margin:1.7em 0 .5em;font-weight:700;color:#243040}
+p{margin:.7em 0}
+a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid #ddd6fe}
+a:hover{border-color:var(--accent)}
+strong{font-weight:700;color:#111827}
+em{color:#334155}
+hr{border:none;border-top:1px solid var(--line);margin:2.2em 0}
+code{font-family:"SFMono-Regular",Menlo,Consolas,monospace;font-size:.85em;
+ background:#f1f5f9;color:#3730a3;padding:2px 6px;border-radius:6px;border:1px solid #e6ebf1}
+pre{background:#fbfcfd;border:1px solid var(--border);border-left:3px solid var(--accent);
+ border-radius:10px;padding:15px 18px;overflow-x:auto;margin:1.1em 0;line-height:1.55}
+pre code{background:none;border:none;padding:0;color:#334155;font-size:12.9px;white-space:pre}
+h1+p,h2+p{margin-top:.5em}
+h1.part{font-size:15px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+ color:var(--accent-ink);background:var(--accent-soft);border-radius:12px;
+ padding:15px 22px;margin:3em 0 .4em;page-break-before:always}
+h1.part+h2{border-top:none;padding-top:.6em;margin-top:1.1em}
+ul,ol{margin:.6em 0 1em;padding-left:1.35em}
+li{margin:.34em 0}
+li::marker{color:var(--accent)}
+blockquote{margin:1.3em 0;padding:16px 22px;background:var(--accent-soft);
+ border-left:4px solid var(--accent);border-radius:0 12px 12px 0;color:#3b3357}
+blockquote p{margin:.35em 0}
+blockquote strong{color:var(--accent-ink)}
+.table-wrap{overflow-x:auto;margin:1.1em 0;border:1px solid var(--border);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{background:#f6f4fe;color:var(--accent-ink);text-align:left;font-weight:700;
+ padding:11px 14px;border-bottom:1px solid var(--border);font-size:12.5px;letter-spacing:.01em}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;color:#334155}
+tbody tr:nth-child(even){background:#fafbfc}
+tbody tr:last-child td{border-bottom:none}
+tbody td:first-child{font-weight:600;color:#1f2937;white-space:nowrap}
+.toc{background:#fbfcfd;border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin:28px 0 6px}
+.toc-title{font-size:11.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+ color:var(--faint);margin-bottom:10px}
+.toc ul{list-style:none;margin:0;padding:0;columns:2;column-gap:34px}
+.toc li{break-inside:avoid;margin:.32em 0}
+.toc a{border:none;color:#334155;font-size:14.5px;font-weight:500}
+.toc a:hover{color:var(--accent-ink)}
+.footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);
+ color:var(--faint);font-size:12.5px}
+@media(max-width:680px){.page{padding:30px 20px;margin:0;border-radius:0}.toc ul{columns:1}h1{font-size:26px}}
+@media print{body{background:#fff}.page{box-shadow:none;border:none;margin:0;max-width:none;padding:0 8px}
+ h2{border-color:#ddd}blockquote{background:#f7f5fd}}
+</style>
+</head>
+<body>
+<main class="page">
+<span class="kicker">Complete Technical Deep Dive</span>
+<h1 id="edtech-real-time-analytics-pipeline-complete-technical-deep-dive">EdTech Real-Time Analytics Pipeline — Complete Technical Deep Dive</h1>
+<p><strong>CSG527 · BITS Pilani Hyderabad · Two-pipeline comparative build</strong></p>
+<hr />
+<nav class="toc"><div class="toc-title">Contents</div><ul><li><a href="#how-to-use-this-document">How to use this document</a></li><li><a href="#1-the-problem-domain">1. The problem domain</a></li><li><a href="#2-the-six-design-ideas-behind-everything">2. The six design ideas behind everything</a></li><li><a href="#3-the-data-model">3. The data model</a></li><li><a href="#4-pipeline-1-component-by-component">4. Pipeline 1, component by component</a></li><li><a href="#5-topology-and-the-central-design-decision">5. Topology and the central design decision</a></li><li><a href="#6-the-generator-and-producer-tuning">6. The generator and producer tuning</a></li><li><a href="#7-apache-kafka-the-backbone">7. Apache Kafka — the backbone</a></li><li><a href="#8-spark-structured-streaming-the-monitoring-consumer">8. Spark Structured Streaming — the monitoring consumer</a></li><li><a href="#9-intelligence-component-1-surgedetector-73-sla-aware-processing">9. Intelligence Component 1 — SurgeDetector (§7.3, SLA-aware processing)</a></li><li><a href="#10-intelligence-component-2-adaptivebatchoptimizer-71-costlatency">10. Intelligence Component 2 — AdaptiveBatchOptimizer (§7.1, cost–latency)</a></li><li><a href="#11-redis-the-hot-store">11. Redis — the hot store</a></li><li><a href="#12-the-storage-worker-pods">12. The storage worker pods</a></li><li><a href="#13-k3s-keda-tier-1-scaling">13. k3s + KEDA — Tier 1 scaling</a></li><li><a href="#14-terraform-asg-cloudwatch-tier-2-scaling-and-infrastructure">14. Terraform, ASG, CloudWatch — Tier 2 scaling and infrastructure</a></li><li><a href="#15-s3-the-parquet-data-lake">15. S3 — the Parquet data lake</a></li><li><a href="#16-dynamodb-analytical-store">16. DynamoDB — analytical store</a></li><li><a href="#17-the-nightly-batch-job">17. The nightly batch job</a></li><li><a href="#18-prometheus-and-grafana-observability">18. Prometheus and Grafana — observability</a></li><li><a href="#19-life-of-an-event-the-complete-trace">19. Life of an event — the complete trace</a></li><li><a href="#20-fault-tolerance-the-complete-model">20. Fault tolerance — the complete model</a></li><li><a href="#21-optimization-catalogue-every-optimization-and-what-it-bought">21. Optimization catalogue — every optimization and what it bought</a></li><li><a href="#22-tuning-why-every-number-is-what-it-is">22. Tuning — why every number is what it is</a></li><li><a href="#23-known-defects-and-inconsistencies">23. Known defects and inconsistencies</a></li><li><a href="#24-what-id-change-in-priority-order">24. What I'd change, in priority order</a></li><li><a href="#25-question-bank">25. Question bank</a></li><li><a href="#26-reference">26. Reference</a></li></ul></nav>
+<h2 id="how-to-use-this-document">How to use this document</h2>
+<p>This is written so you can answer <em>any</em> question about the system. Every component section follows the same five-part shape:</p>
+<ol>
+<li><strong>What it is</strong> — the plain description</li>
+<li><strong>The idea</strong> — why it exists at all; the problem it solves</li>
+<li><strong>How it's built</strong> — real configuration and annotated code</li>
+<li><strong>How it fails and recovers</strong> — the fault-tolerance story</li>
+<li><strong>How it's optimized</strong> — what was tuned and what it bought</li>
+</ol>
+<p>Cross-cutting chapters (Parts IV–VI) then re-slice the same material by <strong>fault tolerance</strong>, <strong>optimization</strong>, <strong>tuning rationale</strong>, <strong>known flaws</strong>, and a <strong>Q&amp;A answer bank</strong>. If you're revising fast: read Part I (ideas), then Part IV (fault tolerance + optimization), then Part VI (Q&amp;A).</p>
+<p><strong>Contents:</strong> Part I — Problem &amp; core ideas · Part II — Pipeline 1 · Part III — Pipeline 2 (component deep dives) · Part IV — Cross-cutting (event trace, fault tolerance, optimization, tuning) · Part V — Flaws &amp; critique · Part VI — Answer bank &amp; reference</p>
+<hr />
+<h1 class="part" id="part-i-problem-requirements-and-the-core-ideas">PART I — PROBLEM, REQUIREMENTS, AND THE CORE IDEAS</h1>
+<h2 id="1-the-problem-domain">1. The problem domain</h2>
+<p>An online learning platform with <strong>~500 students across 10 courses</strong> emits a continuous stream of activity events. Operators need live visibility: who's active, which courses are losing students, whether traffic is surging, how engagement is trending.</p>
+<p><strong>Workload shape</strong>
+- Baseline <strong>~30 events/second</strong>, bursting <strong>3×</strong> during exam periods (tested to 10× = 300 ev/s)
+- Six event types: <code>login</code>, <code>logout</code>, <code>class_join</code>, <code>class_leave</code>, <code>session_start</code>, <code>session_end</code>
+- JSON payloads carrying <code>user_id</code>, <code>class_id</code>, device, region, <code>engagement_score</code> (0–1), quiz <code>score</code> (0–100)</p>
+<p><strong>Why it's hard (state this when asked "what made this non-trivial?")</strong>
+- <strong>Bursty, not uniform.</strong> A system sized for 30 ev/s dies at 300; a system sized for 300 wastes money at 30. That tension forces <em>elasticity</em>, which is the whole engineering story.
+- <strong>Two incompatible freshness requirements in one system.</strong> The dashboard needs sub-5-second KPIs; the data lake is read once a night. Serving both from one path over-engineers the cheap side and under-serves the fast side.
+- <strong>Loss is unacceptable, duplication is tolerable-ish.</strong> Analytics can survive a rare duplicate; it can't survive silently dropping a student's quiz result.</p>
+<p><strong>Functional requirements:</strong> real-time KPIs (active users, events/min, surge state, session completion); per-course analytics (joins, dropout %, avg score by difficulty); per-user daily aggregates; nightly historical rollups.</p>
+<p><strong>Non-functional requirements (NFR §5)</strong> — these drive every design choice:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>NFR</th>
+<th>Target</th>
+<th>Where it's satisfied</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scalability</td>
+<td>Absorb 10× spike</td>
+<td>KEDA pods (1→10) + ASG nodes</td>
+</tr>
+<tr>
+<td>Latency</td>
+<td>&lt; 5 s near-real-time</td>
+<td>Redis hot path (measured 0.277 ms)</td>
+</tr>
+<tr>
+<td>Reliability</td>
+<td>≥ 99.9% uptime</td>
+<td>Checkpoints, systemd, k3s probes (measured 99.9918%)</td>
+</tr>
+<tr>
+<td>Data quality</td>
+<td>Validation + dedup</td>
+<td>Schema-on-parse, <code>event_id</code> dedup</td>
+</tr>
+<tr>
+<td>Cost efficiency</td>
+<td>Minimize cost/GB</td>
+<td>Adaptive batching (−87.6% PUTs), scale-to-zero</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-the-six-design-ideas-behind-everything">2. The six design ideas behind everything</h2>
+<p>If you internalize only one section, make it this one. Every specific choice downstream is an instance of one of these.</p>
+<h3 id="idea-1-separate-the-hot-path-from-the-cold-path">Idea 1 — Separate the hot path from the cold path</h3>
+<p>Live dashboard data and archival data have <em>completely different</em> freshness requirements: milliseconds vs. "sometime today." Fusing them forces the cheap path to pay the fast path's cost. So: <strong>Redis for hot</strong> (sub-ms, ephemeral, TTL'd) and <strong>S3 Parquet for cold</strong> (cheap, durable, batch-read). This single split is what makes the 87.6% S3 cost saving <em>free</em> — nobody is waiting on S3, so you can batch aggressively.</p>
+<h3 id="idea-2-isolate-the-monitoring-path-from-the-storage-path">Idea 2 — Isolate the monitoring path from the storage path</h3>
+<p>Monitoring is the highest-priority path; storage is second. If S3/DynamoDB back-pressure, the dashboard must not go stale. So the two run as <strong>independent consumers</strong> of the same topic: Spark (monitoring → Redis) and k3s pods (storage → S3/DynamoDB). They scale, fail, and degrade independently. <code>STORAGE_ENABLED=false</code> on Spark enforces the split.</p>
+<h3 id="idea-3-scale-on-the-signal-that-actually-means-im-falling-behind">Idea 3 — Scale on the signal that actually means "I'm falling behind"</h3>
+<p>Storage workers are <strong>I/O-bound</strong> — they sit blocked on S3 <code>put_object</code> and DynamoDB <code>update_item</code>. CPU stays ~15–20% even when tens of thousands of events are backed up. A CPU-based autoscaler would <em>never</em> fire. The metric that genuinely means "behind" is <strong>Kafka consumer-group lag</strong>, so scale on that (KEDA).</p>
+<h3 id="idea-4-intelligence-as-rules-in-the-data-path-not-ml-beside-it">Idea 4 — Intelligence as rules in the data path, not ML beside it</h3>
+<p>Every adaptive behavior (batching, surge routing, scaling) is a small deterministic rule embedded directly in the processing loop or the orchestrator. No model, no training, no extra service, no inference latency. <strong>Justification:</strong> the decisions are low-dimensional and threshold-shaped; ML would add infrastructure and opacity for no measurable gain.</p>
+<h3 id="idea-5-never-lose-data-degrade-features-instead">Idea 5 — Never lose data; degrade features instead</h3>
+<p>Under stress the system sheds <em>freshness of low-priority outputs</em>, never events. Kafka's 24 h retention is the universal safety net: any consumer failure just means "re-read from the last committed offset." Degradation is tiered (see §20.4) and fully automatic.</p>
+<h3 id="idea-6-stable-identity-for-stateful-infrastructure">Idea 6 — Stable identity for stateful infrastructure</h3>
+<p>Distributed systems break when addresses move. Kafka bakes its address into <code>advertised.listeners</code>; EC2 changes public IP on stop/start. Hence a <strong>Terraform-managed Elastic IP</strong>. Same principle drives the SSM-stored k3s join token and tag-based instance lookup instead of hardcoded IPs.</p>
+<hr />
+<h2 id="3-the-data-model">3. The data model</h2>
+<h3 id="31-event-lifecycle-a-state-machine-not-random-events">3.1 Event lifecycle (a state machine, not random events)</h3>
+<p>The generator is <strong>stateful</strong> — this matters, because random events would produce statistically meaningless analytics (dropout rates need <code>class_leave</code> to actually follow <code>class_join</code>).</p>
+<pre><code>OFFLINE ──login──► ONLINE ──class_join──► IN_CLASS ──session_start──► IN_SESSION
+   ▲                 │                        │                            │
+   └────logout───────┘                        │◄──────session_end──────────┘
+                                              │
+                                     class_leave (→ ONLINE)
+</code></pre>
+<p>Transition probabilities from <code>generator.py::_transition</code>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Current state</th>
+<th>Transition</th>
+<th>Probability</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ONLINE</code></td>
+<td>→ <code>class_join</code></td>
+<td>80%</td>
+</tr>
+<tr>
+<td><code>ONLINE</code></td>
+<td>→ <code>logout</code></td>
+<td>20%</td>
+</tr>
+<tr>
+<td><code>IN_CLASS</code></td>
+<td>→ <code>session_start</code></td>
+<td>85%</td>
+</tr>
+<tr>
+<td><code>IN_CLASS</code></td>
+<td>→ <code>class_leave</code></td>
+<td>15%</td>
+</tr>
+<tr>
+<td><code>IN_SESSION</code></td>
+<td>→ <code>session_end</code></td>
+<td>100%</td>
+</tr>
+<tr>
+<td>after <code>class_leave</code></td>
+<td>immediately re-join another class</td>
+<td>70%</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Design detail worth quoting:</strong> a churn manager runs every 2 s to hold <strong>~60% of users online</strong>, and events are dispatched <strong>round-robin across online users</strong> rather than randomly. Without round-robin, a high event rate would concentrate on a few users and <code>active_users</code> would under-report — the metric would move with <em>rate</em> instead of with <em>population</em>. That's a subtle correctness fix in the data generation itself.</p>
+<h3 id="32-event-schema-37-fields">3.2 Event schema (37 fields)</h3>
+<p>Grouped by purpose:</p>
+<ul>
+<li><strong>Core:</strong> <code>event_id</code>, <code>user_id</code>, <code>event_type</code>, <code>timestamp</code>, <code>schema_version</code></li>
+<li><strong>User profile:</strong> <code>user_role</code>, <code>subscription_type</code>, <code>user_age_group</code>, <code>user_level</code>, <code>region</code>, <code>country</code>, <code>timezone</code>, <code>device</code>, <code>os</code>, <code>app_version</code>, <code>session_id</code></li>
+<li><strong>Derived temporal:</strong> <code>hour_of_day</code>, <code>day_of_week</code>, <code>is_weekend</code>, <code>is_premium</code> — precomputed at generation so the consumer never has to parse timestamps</li>
+<li><strong>Event-specific:</strong> <code>class_id</code>, <code>course_name</code>, <code>course_category</code>, <code>difficulty_level</code>, <code>instructor_id</code>, <code>session_type</code>, <code>leave_reason</code>, <code>class_duration_sec</code>, <code>interaction_type</code>, <code>content_id</code>, <code>content_duration</code>, <code>session_status</code>, <code>session_duration_sec</code>, <code>score</code>, <code>passed</code>, <code>engagement_score</code>, <code>active_duration_sec</code></li>
+</ul>
+<p><strong>Why <code>event_id</code> exists:</strong> it's the deduplication key. Producer retries and consumer rebalances can both re-deliver an event; <code>event_id</code> makes duplicates detectable.</p>
+<p><strong>Why <code>schema_version</code> exists:</strong> the honest answer — it's a forward-compatibility hook, since there's no schema registry. If asked, say: <em>"It's a poor-man's schema registry; in production I'd use Avro + Confluent Schema Registry and drop this field."</em></p>
+<hr />
+<h1 class="part" id="part-ii-pipeline-1-the-serverless-baseline">PART II — PIPELINE 1: THE SERVERLESS BASELINE</h1>
+<h2 id="4-pipeline-1-component-by-component">4. Pipeline 1, component by component</h2>
+<p><strong>Flow:</strong> Generator (local) → Kinesis → Lambda → {S3 raw JSON → Glue → Athena, DynamoDB → Athena federated} → QuickSight; CloudWatch throughout.</p>
+<h3 id="41-kinesis-data-streams-ingestion">4.1 Kinesis Data Streams — ingestion</h3>
+<p><strong>Idea:</strong> get a managed, durable event bus with zero operational burden.
+<strong>Built:</strong> stream <code>edtech-events-stream</code> in <strong>on-demand mode</strong> — no manual shard planning, absorbs bursts automatically.
+<strong>Fails/recovers:</strong> managed, multi-AZ; retention allows re-read.
+<strong>Trade-off:</strong> you don't control the scaling signal, and per-shard/on-demand pricing scales with throughput.</p>
+<h3 id="42-aws-lambda-processing">4.2 AWS Lambda — processing</h3>
+<p><strong>Idea:</strong> event-driven compute with no servers; scales concurrency automatically per shard.
+<strong>Built:</strong> triggered by Kinesis; decodes records, normalizes schema, extracts attributes, writes raw JSON → S3, updates operational state → DynamoDB (<code>ActiveSessions</code>, <code>ClassMetrics</code>), publishes throughput/latency metrics → CloudWatch.
+<strong>Fails/recovers:</strong> automatic retries on the Kinesis shard iterator; a poison record blocks the shard until it ages out (this is why a <strong>DLQ</strong> is the standard fix).
+<strong>Limit that motivated Pipeline 2:</strong> it is <strong>stateless per invocation</strong>.</p>
+<h3 id="43-pipeline-1s-intelligence-layer-ema-spike-detection">4.3 Pipeline 1's intelligence layer — EMA spike detection</h3>
+<p>Worth knowing in detail, because "did P1 have intelligence too?" is a likely question. <strong>Yes:</strong>
+- Events aggregated into <strong>fixed 1-minute buckets</strong>
+- A rolling baseline maintained as an <strong>Exponential Moving Average (EMA)</strong>
+- Spike declared when the current minute exceeds a <strong>configurable multiple</strong> of the EMA baseline
+- <strong>The EMA is updated only once per window</strong> — deliberately, so multiple partial updates inside one interval can't bias the baseline
+- Spike indicators published as CloudWatch metrics</p>
+<p><strong>The instructive part:</strong> because Lambda is stateless, the EMA and bucket counters must live in <strong>DynamoDB</strong>, so every detection step costs a network round-trip and needs careful read-modify-write handling. In Pipeline 2 the equivalent (<code>SurgeDetector</code>) is a <code>deque</code> <strong>in process memory</strong> — no I/O at all. <em>That contrast is the single cleanest illustration of why Pipeline 2 exists.</em></p>
+<h3 id="44-s3-dynamodb-storage">4.4 S3 + DynamoDB — storage</h3>
+<ul>
+<li><strong>S3:</strong> raw events in <strong>original JSON</strong> (not Parquet — a known inefficiency; Athena scans more bytes)</li>
+<li><strong>DynamoDB:</strong> <code>ActiveSessions</code> and <code>ClassMetrics</code> for low-latency operational state</li>
+</ul>
+<h3 id="45-glue-athena-quicksight-catalog-query-visualization">4.5 Glue → Athena → QuickSight — catalog, query, visualization</h3>
+<ul>
+<li><strong>Glue crawler</strong> scans S3, infers JSON schema, populates the Data Catalog — no manual DDL</li>
+<li><strong>Athena</strong> runs SQL over S3 <em>and</em>, via a <strong>federated connector</strong>, over DynamoDB — unified querying with no data duplication</li>
+<li><strong>QuickSight</strong> connects to Athena for dashboards (activity trends, throughput, regional distribution, class engagement)</li>
+</ul>
+<h3 id="46-documented-challenges-say-these-they-justify-pipeline-2">4.6 Documented challenges (say these; they justify Pipeline 2)</h3>
+<ol>
+<li><strong>Statelessness</strong> — maintaining sessions/metrics forced all state into DynamoDB, adding complexity</li>
+<li><strong>Debugging across services</strong> — tracing one event through Kinesis→Lambda→S3→DynamoDB→Athena meant hopping CloudWatch log groups</li>
+<li><strong>Cost at high event rates</strong> — invocations scale linearly with events</li>
+<li><strong>Spike detection in a stateless world</strong> — windowing + rolling baselines in DynamoDB required careful update logic</li>
+</ol>
+<hr />
+<h1 class="part" id="part-iii-pipeline-2-the-self-managed-system">PART III — PIPELINE 2: THE SELF-MANAGED SYSTEM</h1>
+<h2 id="5-topology-and-the-central-design-decision">5. Topology and the central design decision</h2>
+<pre><code>EC2-1 (t2.medium, Elastic IP)            EC2-2 (t3.medium, 20 GB EBS)
+├── generator.py                          ├── Spark Streaming (STORAGE_ENABLED=false)
+└── Kafka 4.1.1 KRaft                     │    ├── SurgeDetector → edtech-priority
+    ├── edtech-events   (10 partitions)   │    ├── Redis 7 (16 live pipeline:* keys)
+    └── edtech-priority ( 3 partitions)   │    └── Prometheus metrics :8000
+              │                           ├── k3s server → storage pods (1–10, KEDA)
+              │  :9093 external           ├── batch_reports.py (cron, midnight UTC)
+              ├───────────────┬──────────►└── Prometheus + Grafana (:3000)
+              │               │
+       checkpoint offsets   consumer group          AWS: S3 · DynamoDB×3 · IAM · SSM · ASG
+       (Spark, monitoring)  edtech-storage-group
+                            (pods, storage)
+</code></pre>
+<h3 id="51-the-dual-consumer-split-the-most-important-decision-in-the-system">5.1 The dual-consumer split — the most important decision in the system</h3>
+<p><strong>Both consumers read every event independently.</strong> This is deliberate, not accidental duplication.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Spark (<code>stream_consumer.py</code>)</th>
+<th>Storage pods (<code>storage_worker.py</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Offset management</td>
+<td><strong>Spark checkpoint directory</strong></td>
+<td><strong>Kafka consumer group</strong> <code>edtech-storage-group</code></td>
+</tr>
+<tr>
+<td>Reads</td>
+<td><code>edtech-events</code></td>
+<td><code>edtech-events</code></td>
+</tr>
+<tr>
+<td>Writes</td>
+<td>Redis + Prometheus</td>
+<td>S3 + DynamoDB</td>
+</tr>
+<tr>
+<td>Scaling</td>
+<td>Fixed — 1 systemd service</td>
+<td>KEDA 1→10 pods on lag</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>Spark JVM (~1.5 GB)</td>
+<td>Python (~107 MB)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why split at all?</strong> Three reasons, in priority order:
+1. <strong>Blast-radius isolation</strong> — a slow S3 or a DynamoDB throttle cannot delay the dashboard, because that work happens in a different process on a different scaling schedule.
+2. <strong>Independent scaling</strong> — storage throughput needs to scale 10× under load; the monitoring aggregation does not (it's one aggregate view, and one process computes it correctly).
+3. <strong>Right runtime for the job</strong> — storage work is trivial I/O, so paying the JVM's 1.5 GB is absurd. Python at ~107 MB gives roughly <strong>6× the pod density per node</strong>, which directly raises the throughput ceiling.</p>
+<p><strong>Subtle detail that impresses interviewers:</strong> Spark does <strong>not</strong> register a traditional Kafka consumer group. It manages offsets in its checkpoint directory, so <code>kafka-consumer-groups.sh --list</code> shows <em>only</em> <code>edtech-storage-group</code>. If asked "where's your Spark consumer group?" — that's the answer, and it's also why KEDA can measure storage lag cleanly without Spark's reads polluting the number.</p>
+<p><strong>Why no duplicate writes?</strong> <code>STORAGE_ENABLED=false</code> on Spark. The pods own every S3/DynamoDB write.</p>
+<hr />
+<h2 id="6-the-generator-and-producer-tuning">6. The generator and producer tuning</h2>
+<p><strong>Idea:</strong> produce statistically valid, controllable load — and be a well-behaved Kafka producer.</p>
+<pre><code class="language-python">kwargs = {
+    &quot;bootstrap_servers&quot;: bootstrap_servers,
+    &quot;value_serializer&quot;:  lambda v: json.dumps(v).encode(&quot;utf-8&quot;),
+    &quot;key_serializer&quot;:    lambda k: k.encode(&quot;utf-8&quot;) if k else None,
+    &quot;acks&quot;:              1,        # leader-only ack
+    &quot;retries&quot;:           3,        # transient failure resilience
+    &quot;linger_ms&quot;:         10,       # wait 10ms to fill a batch
+    &quot;batch_size&quot;:        65536,    # 64 KB batches
+    &quot;compression_type&quot;:  &quot;lz4&quot;,    # fast compression
+}
+...
+self._prod.send(self.topic, value=event, key=event.get(&quot;user_id&quot;))
+</code></pre>
+<p><strong>Every parameter explained:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key=user_id</code></td>
+<td>—</td>
+<td><strong>Same user → same partition → per-user ordering guaranteed.</strong> Kafka only orders <em>within</em> a partition, so keying is how you get "this user's <code>login</code> precedes their <code>class_join</code>."</td>
+</tr>
+<tr>
+<td><code>acks</code></td>
+<td><code>1</code></td>
+<td>Leader acknowledges without waiting for replicas. Faster; acceptable at RF=1 (single broker) — with a replicated cluster you'd want <code>acks=all</code>.</td>
+</tr>
+<tr>
+<td><code>retries</code></td>
+<td><code>3</code></td>
+<td>Survives transient broker blips — <strong>and is precisely why deduplication is needed</strong>: a retry after a partially-successful send can duplicate an event.</td>
+</tr>
+<tr>
+<td><code>linger_ms</code></td>
+<td><code>10</code></td>
+<td>Wait up to 10 ms to accumulate a batch. Trades 10 ms latency for far better throughput and compression ratio.</td>
+</tr>
+<tr>
+<td><code>batch_size</code></td>
+<td><code>65536</code></td>
+<td>64 KB per batch — bigger batches compress better and cut request count.</td>
+</tr>
+<tr>
+<td><code>compression_type</code></td>
+<td><code>lz4</code></td>
+<td>Chosen for <strong>speed over ratio</strong> (vs gzip). Network is the constraint; CPU on a t2.medium is precious.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Modes:</strong> <code>continuous</code>, <code>spike</code> (pre/spike/post phases), <code>failure</code> (pause to simulate producer death), <code>file</code>, <code>--dry-run</code>. Rate control uses a <strong>monotonic clock</strong> so actual ev/s matches configured ev/s.</p>
+<p><strong>Fault behavior:</strong> <code>send()</code> returns <code>True/False</code>; failures are counted and logged but <strong>never fatal</strong> — the generator keeps running rather than crashing the load test.</p>
+<blockquote>
+<p><strong>Interview trap:</strong> "You said zero data loss, but <code>acks=1</code> — can't you lose events?" <strong>Correct answer:</strong> <em>"Yes, in principle — <code>acks=1</code> means the leader acknowledged but replicas may not have. With RF=1 on a single broker it's moot, since there are no replicas either way. In a production multi-broker cluster I'd set <code>acks=all</code> with <code>min.insync.replicas=2</code>, and enable the idempotent producer to make retries safe. That's part of the same upgrade as going multi-broker."</em></p>
+</blockquote>
+<hr />
+<h2 id="7-apache-kafka-the-backbone">7. Apache Kafka — the backbone</h2>
+<h3 id="71-why-kafka-the-idea">7.1 Why Kafka (the idea)</h3>
+<p>The requirement was a <strong>durable, replayable, partitioned log</strong> — not a queue. Specifically:
+- <strong>Buffer</strong> — absorb a 3× surge so no producer-side loss (24 h retention)
+- <strong>Replay</strong> — reprocess from any offset when a consumer changes or fails
+- <strong>Partition parallelism</strong> — the mechanism that makes consumer scaling <em>possible at all</em>
+- <strong>Consumer-controlled offsets</strong> — which is what makes lag a measurable, scalable signal</p>
+<h3 id="72-kraft-mode">7.2 KRaft mode</h3>
+<p>Kafka 4.1.1 in <strong>KRaft</strong> (Kafka Raft) — metadata lives in Kafka itself, <strong>no ZooKeeper</strong>. One less distributed system to install, secure, and monitor on a t2.medium. Modern default; ZooKeeper is deprecated.</p>
+<h3 id="73-topics-and-partitioning">7.3 Topics and partitioning</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>Partitions</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>edtech-events</code></td>
+<td><strong>10</strong></td>
+<td>Primary stream; all consumers</td>
+</tr>
+<tr>
+<td><code>edtech-priority</code></td>
+<td><strong>3</strong></td>
+<td>Surge overflow lane (QoS isolation)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why exactly 10 partitions?</strong> Partition count <em>is</em> the parallelism ceiling — within a consumer group, one partition is read by at most one consumer. 10 partitions = max 10 useful pods. It was chosen to match the intended max pod count for the 10× load target (300 ev/s ÷ 10 pods ≈ 30 ev/s/pod, the rate a single pod comfortably handles). An 11th pod would be assigned nothing and sit idle.</p>
+<p><strong>Listeners:</strong> <code>9092</code> = PLAINTEXT internal (generator runs on EC2-1, uses <code>localhost:9092</code>); <code>9093</code> = EXTERNAL for EC2-2, pods, and KEDA.</p>
+<h3 id="74-the-elastic-ip-problem-a-favorite-war-story">7.4 The Elastic IP problem (a favorite war story)</h3>
+<p><strong>Symptom:</strong> stop/start EC2-1 → every consumer loses the broker.
+<strong>Root cause:</strong> Kafka advertises a fixed address to clients via <code>advertised.listeners</code>; EC2's public IP changes on stop/start, so the advertised address becomes a lie.
+<strong>Fix:</strong> a Terraform-managed <strong>Elastic IP</strong> (<code>aws_eip.ec2_1</code> + association), plus <code>apply_eip.sh</code> which SSHes in, rewrites <code>server.properties</code> (<code>sed</code> on <code>EXTERNAL://...:9093</code>), restarts Kafka, updates <code>/etc/edtech-spark.env</code> on EC2-2, patches the k3s ConfigMap, and updates the local <code>configmap.yaml</code>.
+<strong>Lesson to state:</strong> <em>"Stateful infrastructure needs stable identity — I made the address a managed resource rather than a fact I kept re-discovering."</em></p>
+<h3 id="75-failure-behavior">7.5 Failure behavior</h3>
+<p>Single broker = <strong>SPOF</strong> (own this openly). If it dies: consumption pauses, dashboard goes stale, <strong>but nothing is lost</strong> — the generator's sends fail and are logged, and everything already in Kafka survives on disk. Consumers reconnect automatically via the stable EIP. <strong>Production fix:</strong> 3 brokers, RF=3, <code>min.insync.replicas=2</code> — a broker loss becomes a leader election instead of an outage. Throughput ceiling on one t2.medium is <strong>~800 ev/s</strong>.</p>
+<hr />
+<h2 id="8-spark-structured-streaming-the-monitoring-consumer">8. Spark Structured Streaming — the monitoring consumer</h2>
+<h3 id="81-why-spark-the-idea">8.1 Why Spark (the idea)</h3>
+<p>Needed a <strong>stateful</strong> stream processor with Python support and durable offset management. Structured Streaming gives micro-batch semantics with checkpoint-based recovery, and the same API covers the batch job.</p>
+<h3 id="82-source-configuration">8.2 Source configuration</h3>
+<pre><code class="language-python">raw = (spark.readStream.format(&quot;kafka&quot;)
+    .option(&quot;kafka.bootstrap.servers&quot;, KAFKA_BOOTSTRAP)
+    .option(&quot;subscribe&quot;,            KAFKA_TOPIC)
+    .option(&quot;startingOffsets&quot;,      &quot;latest&quot;)
+    .option(&quot;failOnDataLoss&quot;,       &quot;false&quot;)
+    .option(&quot;maxOffsetsPerTrigger&quot;, &quot;30000&quot;)   # back-pressure guard
+    .load())
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>startingOffsets=latest</code></td>
+<td>It's a live dashboard — on first start, skip history rather than replaying days of backlog</td>
+</tr>
+<tr>
+<td><code>failOnDataLoss=false</code></td>
+<td>If retention deletes an offset Spark expects, log and continue instead of crashing. Availability over strictness for a <em>monitoring</em> path</td>
+</tr>
+<tr>
+<td><code>maxOffsetsPerTrigger=30000</code></td>
+<td><strong>Back-pressure</strong>: cap events per micro-batch so a huge backlog can't create an unbounded batch that OOMs the driver. 30,000 = 10× headroom over a 3,000-event 10× batch</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="83-session-tuning">8.3 Session tuning</h3>
+<pre><code class="language-python">.config(&quot;spark.sql.shuffle.partitions&quot;, &quot;4&quot;)   # default is 200
+.config(&quot;spark.executor.memory&quot;, &quot;1g&quot;)
+.config(&quot;spark.driver.memory&quot;,   &quot;512m&quot;)
+</code></pre>
+<p><strong><code>shuffle.partitions=4</code> is the highest-value tune here.</strong> Spark's default of 200 would spawn 200 tasks per shuffle for batches of a few hundred rows — scheduling overhead would dwarf the actual work. Matching parallelism to data size (4 on the stream, 2 on the batch job) is basic but frequently missed.</p>
+<p><strong>Deliberate non-setting:</strong> <code>spark.jars</code> is <em>not</em> set. All JARs live in <code>/opt/spark/jars/</code> and are passed via <code>spark-submit</code>; setting <code>spark.jars</code> triggers a <strong>331 MB re-copy to /tmp at every startup</strong>, adding ~30 s to recovery.</p>
+<h3 id="84-the-foreachbatch-micro-batch-model">8.4 The <code>foreachBatch</code> micro-batch model</h3>
+<p><code>.trigger(processingTime="10 seconds")</code> + <code>.foreachBatch(process_batch)</code> — Spark hands you a normal DataFrame every 10 seconds and you do arbitrary Python with it. That's what makes writing to Redis, Kafka, and Prometheus (none of which are native Spark sinks) possible.</p>
+<h3 id="85-the-single-collect-optimization-the-deepest-performance-insight">8.5 The single-<code>collect()</code> optimization — the deepest performance insight</h3>
+<p>The original implementation issued <strong>21 separate Spark actions</strong> per batch (a <code>count()</code>, <code>distinct().count()</code>, <code>groupBy().collect()</code> for each metric…). Each action re-scans the DataFrame and pays full job-scheduling overhead.</p>
+<pre><code class="language-python"># ONE Spark action: pull the entire batch to the driver
+events: list[dict] = [row.asDict() for row in batch_df.collect()]
+count = len(events)
+# ...every KPI below is a pure-Python comprehension over `events`
+active_users_now = len({e[&quot;user_id&quot;] for e in events if e.get(&quot;user_id&quot;)})
+</code></pre>
+<p><strong>The reasoning:</strong> at 300 events/batch (~300 KB) or even 3,000 (~3 MB), the data trivially fits in the driver. Distributed aggregation is <em>pure overhead</em> at this size — 21 scheduled jobs to process 3 MB. Pulling once and computing in Python collapsed <strong>21 actions → 1</strong> and is the main reason batch time is <strong>2.0 s</strong> rather than tens of seconds.</p>
+<p><strong>The senior framing:</strong> <em>"Spark is a distributed engine, but distribution has fixed costs. Below a few MB per batch the right move is to stop distributing. Knowing when</em> not <em>to use the distributed path is the optimization."</em> Caveat to volunteer: this stops scaling if batches reach hundreds of MB — at that point you'd go back to DataFrame aggregations.</p>
+<h3 id="86-checkpointing">8.6 Checkpointing</h3>
+<pre><code class="language-python">CHECKPOINT_PATH = f&quot;/tmp/edtech-checkpoints/stream-{_hostname}&quot;
+</code></pre>
+<p>Per-hostname, because a shared checkpoint path across multiple pods causes <code>ConcurrentModificationException</code>. Contents after 17 h: <code>commits/</code>, <code>offsets/</code>, <code>metadata</code>, <code>sources/0/</code> — <strong>~2.4 MB for 290 batches (~8.3 KB/batch)</strong>.</p>
+<p><strong>Semantics:</strong> offsets are committed only <em>after</em> the batch's work succeeds, so a crash re-processes the last uncommitted batch rather than skipping it — <strong>effectively-once</strong>, at-least-once at the boundary.</p>
+<p><strong>Measured cost:</strong> 0.5 s of the 2.0 s batch = <strong>25% overhead</strong>. Recovery read: <strong>&lt; 1 s</strong>.</p>
+<h3 id="87-batch-time-breakdown-30-samples">8.7 Batch time breakdown (30 samples)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kafka fetch + JSON deserialization</td>
+<td>0.8 s</td>
+</tr>
+<tr>
+<td><code>foreachBatch</code> user code (Redis, metrics, intelligence)</td>
+<td>0.7 s</td>
+</tr>
+<tr>
+<td>Checkpoint write</td>
+<td>0.5 s</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>2.0 s</strong> (P95 2.47 s)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="88-deduplication-and-a-real-bug-to-disclose">8.8 Deduplication — and a real bug to disclose</h3>
+<pre><code class="language-python">dedup_key = &quot;pipeline:dedup_event_ids&quot;
+pipe = r.pipeline()
+for ev in events:
+    if ev.get(&quot;event_id&quot;):
+        pipe.sadd(dedup_key, ev[&quot;event_id&quot;])   # 1 = new, 0 = duplicate
+add_results = pipe.execute()
+r.expire(dedup_key, 3600)
+</code></pre>
+<p><strong>Idea:</strong> producer retries (<code>retries=3</code>) and consumer rebalances both re-deliver. A Redis <strong>Set</strong> gives O(1) membership, and pipelining sends all <code>SADD</code>s in one round-trip. Events without <code>event_id</code> pass through unfiltered; duplicates increment <code>pipeline_events_deduped_total</code>.</p>
+<blockquote>
+<p><strong>⚠️ Known defect — disclose this proactively, it reads as rigor.</strong> The docs describe a "1-hour <strong>sliding window</strong>," but <code>r.expire(dedup_key, 3600)</code> <strong>resets the TTL on the whole set every batch</strong>. Under continuous traffic the key never expires, so the set grows <strong>unboundedly</strong> — at 30 ev/s that's ~2.6 M members/day, and Redis memory grows without limit. It only actually clears after a full hour with <em>no</em> traffic. <strong>Correct fix:</strong> a Redis Set with per-member expiry isn't native, so use either (a) time-bucketed keys — <code>dedup:{YYYYMMDDHH}</code> with a real TTL per bucket, checking current+previous bucket, or (b) a Bloom filter / <code>SETEX</code> per <code>event_id</code>. Saying this unprompted is a strong signal.</p>
+</blockquote>
+<hr />
+<h2 id="9-intelligence-component-1-surgedetector-73-sla-aware-processing">9. Intelligence Component 1 — SurgeDetector (§7.3, SLA-aware processing)</h2>
+<h3 id="91-the-idea">9.1 The idea</h3>
+<p>Exam periods cause bursts. A burst that isn't recognized becomes growing consumer lag, then a stale dashboard, then a violated SLA. The system must (a) detect quickly, (b) give critical events a faster lane, and (c) <strong>not oscillate</strong> — a detector that flips state every 10 s is worse than none, because the dashboard flickers and any downstream reaction thrashes.</p>
+<h3 id="92-annotated-implementation">9.2 Annotated implementation</h3>
+<pre><code class="language-python">class SurgeDetector:
+    WINDOW_SECS    = 300   # 5-minute rolling window
+    SURGE_MULT     = 1.5   # enter surge above 1.5× baseline
+    NORMAL_MULT    = 1.1   # exit only below 1.1× — hysteresis band
+    MIN_SURGE_HOLD = 6     # stay in surge ≥6 batches (~60 s)
+
+    def update(self, batch_count, trigger_interval_secs, events=None):
+        now          = time.time()
+        current_rate = batch_count / max(trigger_interval_secs, 1)
+        self._window.append((now, current_rate))   # store RATE, not raw count
+        self._prune()                              # drop entries older than 300s
+        rolling_avg = self._rolling_avg()
+
+        if not self.in_surge and rolling_avg &gt; 0 and current_rate &gt; rolling_avg * self.SURGE_MULT:
+            self.in_surge    = True
+            self._surge_hold = self.MIN_SURGE_HOLD
+            self._get_redis().set(&quot;pipeline:surge_detected&quot;, &quot;1&quot;, ex=120)
+            if events is not None:
+                self._send_priority(events)
+        elif self.in_surge:
+            if self._surge_hold &gt; 0:
+                self._surge_hold -= 1              # burn the hold first
+            elif current_rate &lt;= rolling_avg * self.NORMAL_MULT:
+                self.in_surge = False
+                self._get_redis().set(&quot;pipeline:surge_detected&quot;, &quot;0&quot;, ex=120)
+        return self.in_surge
+</code></pre>
+<h3 id="93-four-design-decisions-worth-defending">9.3 Four design decisions worth defending</h3>
+<p><strong>1. Store <em>rate</em>, not raw count.</strong> <code>current_rate = batch_count / trigger_interval</code> makes the multipliers <strong>scale-independent</strong> — the same 1.5× rule works whether the trigger is 10 s or 30 s. Storing raw counts would couple the threshold to the trigger interval.</p>
+<p><strong>2. Two thresholds, not one (1.5× in, 1.1× out).</strong> This is <strong>hysteresis</strong> — the same principle as a thermostat. A single threshold means any rate hovering near it flips state constantly. The gap between 1.5 and 1.1 creates a dead band that must be fully crossed to change state.</p>
+<p><strong>3. A minimum hold of 6 batches on top of hysteresis.</strong> Belt and braces: even inside the dead band, once surge is declared it persists ≥6 batches (~60 s). Why: surges are <em>bursty</em> — a momentary dip below threshold doesn't mean the exam ended. Prevents <code>surge_detected</code> flipping every 10 s in Redis and destabilizing the dashboard.</p>
+<p><strong>4. Only two event types are forwarded.</strong></p>
+<pre><code class="language-python">priority_rows = [e for e in events if e.get(&quot;event_type&quot;) in (&quot;class_join&quot;, &quot;session_start&quot;)]
+</code></pre>
+<p><code>class_join</code> and <code>session_start</code> are the <em>leading indicators</em> of live engagement — the events that drive "who is active right now." <code>logout</code> and <code>session_end</code> are trailing and can wait. <strong>Priority routing is about which events matter most under stress, not about volume.</strong></p>
+<h3 id="94-measured-results">9.4 Measured results</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Detection latency</td>
+<td><strong>&lt; 40 s</strong> (one micro-batch)</td>
+</tr>
+<tr>
+<td>Detection ratio</td>
+<td><strong>1.84×</strong> (obs 1), 1.89× (obs 2)</td>
+</tr>
+<tr>
+<td>Margin above threshold</td>
+<td>(1.84−1.5)/1.5 = <strong>22.7%</strong></td>
+</tr>
+<tr>
+<td>Events forwarded in one surge batch</td>
+<td>1,200</td>
+</tr>
+<tr>
+<td>Consumer lag during surge</td>
+<td><strong>bounded at 3,091</strong></td>
+</tr>
+<tr>
+<td>False positives in 17 h+</td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why 3× input produced only 1.84× measured ratio:</strong> the rolling average is <em>still rising</em> while the spike is in progress — the baseline chases the signal — so the observed ratio is compressed. This is exactly why the threshold sits at 1.5 and not 2.5.</p>
+<h3 id="95-the-honest-gap">9.5 The honest gap</h3>
+<p>The priority topic <strong>has no dedicated consumer</strong>. <code>SurgeDetector</code> produces to <code>edtech-priority</code>, but neither Spark nor the storage pods subscribe to it (the docs concede: <em>"currently same consumer"</em>). So the producer half of a priority-QoS pattern shipped; the consumer half didn't, and the isolation benefit is <strong>theoretical as-built</strong>.</p>
+<p><strong>How to say it:</strong> <em>"It's a QoS lane, not extra throughput — it's meant to be drained by its own consumer group, independent of the storage group's 10-pod cap, so critical live-signal events never queue behind the storage backlog. I provisioned the topic and the routing but didn't deploy the consumer, so today it's a demonstrated hook. Finishing it means a small dedicated group — 1–3 pods with their own KEDA trigger, or a direct Spark→Redis fast path."</em></p>
+<hr />
+<h2 id="10-intelligence-component-2-adaptivebatchoptimizer-71-costlatency">10. Intelligence Component 2 — AdaptiveBatchOptimizer (§7.1, cost–latency)</h2>
+<h3 id="101-the-idea">10.1 The idea</h3>
+<p>Naive Structured Streaming writes <strong>one S3 object per micro-batch</strong>. At 30 ev/s with a 10 s trigger that's 300 events → a <strong>5–10 KB Parquet file</strong>, every 10 s → <strong>8,640 PUTs/day</strong>. Two problems: PUT-request cost, and Parquet's columnar compression barely works at that size (per-file metadata overhead dominates).</p>
+<p><strong>The unlock is Idea 1:</strong> S3 serves only the <em>nightly batch job</em>. Nobody is waiting on it. So <strong>S3 freshness is a free variable</strong> — you can delay writes by minutes with zero user-visible impact, while Redis keeps the dashboard sub-millisecond.</p>
+<h3 id="102-implementation">10.2 Implementation</h3>
+<pre><code class="language-python">class AdaptiveBatchOptimizer:
+    FLUSH_EVENT_THRESHOLD = 10_000   # throughput trigger
+    FLUSH_TIME_SECS       = 300      # latency bound (5 min)
+
+    def add_events(self, events: list[dict]):
+        self._baseline_calls += 1          # what naive would have cost
+        self._buffer.extend(events)
+        elapsed = time.time() - self._last_flush
+        if (len(self._buffer) &gt;= self.FLUSH_EVENT_THRESHOLD
+                or elapsed &gt;= self.FLUSH_TIME_SECS):
+            self._flush()
+</code></pre>
+<p><strong>A dual trigger is essential — this is the part to explain well:</strong>
+- <strong>Event threshold alone</strong> → at low traffic the buffer might take an hour to fill; S3 goes stale and a crash risks more buffered data.
+- <strong>Time threshold alone</strong> → at high traffic you'd flush a huge buffer on a fixed clock, and file sizes would swing wildly.
+- <strong>Whichever fires first</strong> → bounded staleness (<strong>never &gt; 5 min</strong>) <em>and</em> bounded file size. High-throughput case flushes on count; low-throughput case flushes on time.</p>
+<p>The optimizer also self-instruments: it counts <code>_baseline_calls</code> (one per micro-batch = what naive would have done) vs <code>_optimized_calls</code> (actual flushes) and publishes <code>pipeline:s3_cost_stats</code> to Redis, which Grafana renders as a live cost-reduction %.</p>
+<h3 id="103-measured-impact">10.3 Measured impact</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>PUTs / 1.5 h</th>
+<th>PUTs / day</th>
+<th>Cost / day</th>
+<th>Avg file size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Naive (per-batch)</td>
+<td>225</td>
+<td>8,640</td>
+<td>$0.0432</td>
+<td>~8 KB</td>
+</tr>
+<tr>
+<td><strong>AdaptiveBatch</strong></td>
+<td><strong>28</strong></td>
+<td>~1,075</td>
+<td><strong>$0.0054</strong></td>
+<td><strong>~536 KB</strong></td>
+</tr>
+<tr>
+<td><strong>Improvement</strong></td>
+<td>—</td>
+<td>—</td>
+<td><strong>87.6%</strong></td>
+<td><strong>67× larger</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Why bigger files matter beyond PUT cost (three effects, name all three):</strong>
+1. <strong>Compression</strong> — Parquet's columnar encoding (dictionary, RLE) only pays off once there are enough rows per column chunk; at 8 KB, metadata dominates.
+2. <strong>Read performance</strong> — the nightly job opens 125 files instead of 8,640; S3 GET latency is dominated by per-request round-trips, not bytes.
+3. <strong>Avoiding the small-file problem</strong> — the classic data-lake pathology that eventually forces a compaction job.</p>
+<h3 id="104-threshold-asymmetry-a-detail-that-shows-care">10.4 Threshold asymmetry (a detail that shows care)</h3>
+<p><code>FLUSH_EVENTS</code> is <strong>10,000 in Spark</strong> but <strong>5,000 in the pods</strong>. Why: each pod owns only a <em>subset</em> of partitions, so it sees a fraction of the stream. Halving the threshold keeps the <em>flush cadence</em> similar rather than letting pods buffer for very long stretches.</p>
+<h3 id="105-failure-behavior">10.5 Failure behavior</h3>
+<p>The buffer is <strong>in-memory and not persistent — deliberately</strong>. On SIGKILL the buffered events are simply <em>not yet committed</em> in Kafka, so the replacement consumer re-reads them. Persisting the buffer would add a durability layer to protect data that is <em>already durable in Kafka</em>. Max at-risk window = <code>max_poll_interval_ms (120 s) × event rate</code> ≈ 3,600 events, all recoverable from 24 h retention.</p>
+<hr />
+<h2 id="11-redis-the-hot-store">11. Redis — the hot store</h2>
+<h3 id="111-why-redis">11.1 Why Redis</h3>
+<p>Sub-millisecond reads, a <strong>native Grafana datasource plugin</strong> (so the dashboard reads it directly — no API layer to build), and simple key/value + hash semantics that match "current value of a KPI." <strong>Measured: 0.277 ms mean GET, P95 0.477 ms</strong> — roughly 10,000× faster than the 5 s NFR.</p>
+<h3 id="112-tiered-ttls-an-under-appreciated-design-detail">11.2 Tiered TTLs — an under-appreciated design detail</h3>
+<pre><code class="language-python">redis_write({...}, ttl=120)   # Window 1 — active users, events/min, regions
+redis_write({...}, ttl=360)   # Window 2 — course analytics, engagement, dropout
+redis_write({...}, ttl=900)   # Window 3 — class aggregates, device ratio
+</code></pre>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>TTL</th>
+<th>Contents</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>120 s</td>
+<td>active users, events/min, region breakdown</td>
+<td>Volatile — a 2-minute-old "active users" is <em>wrong</em>, so let it expire and show N/A</td>
+</tr>
+<tr>
+<td>2</td>
+<td>360 s</td>
+<td>course analytics, engagement, dropout</td>
+<td>Moderately stable</td>
+</tr>
+<tr>
+<td>3</td>
+<td>900 s</td>
+<td>class counts, avg duration, device ratio</td>
+<td>Slow-moving; long TTL avoids gaps in sparse batches</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>The idea:</strong> TTL encodes <em>how fast a metric becomes a lie</em>. It also makes staleness <strong>self-healing</strong> — if the pipeline dies, panels go blank rather than displaying confidently wrong numbers. Silent staleness is worse than a visible gap.</p>
+<h3 id="113-the-master-consumer-guard">11.3 The master-consumer guard</h3>
+<pre><code class="language-python">if IS_MASTER_CONSUMER:
+    redis_write({...})
+else:
+    log.debug(&quot;skipping Redis (non-master consumer)&quot;)
+</code></pre>
+<p><strong>Why:</strong> each consumer instance sees only <em>its</em> share of events. If several instances wrote KPIs to the same keys, they'd overwrite each other with <em>partial</em> views — <code>active_users</code> would flicker between fragments. So exactly one instance (EC2-2's Spark) is designated master and writes the aggregate view.</p>
+<p><strong>Interview framing:</strong> <em>"Aggregations that must be global need a single writer, or a merge strategy. Counters can be distributed (DynamoDB <code>ADD</code>); a set-cardinality like <code>active_users</code> cannot be merged from partial views without something like HyperLogLog — so I chose a single writer."</em> That last clause is exactly the kind of thing that reads as depth.</p>
+<h3 id="114-failure-behavior">11.4 Failure behavior</h3>
+<p>Redis down → Grafana panels show N/A; Spark logs the failure and retries next batch; <strong>S3/DynamoDB writes are unaffected</strong> (different path). systemd restarts Redis. <strong>No data loss</strong> — Redis holds only derived, regenerable values, never source of truth. Worth saying explicitly: <em>"Redis is a cache, not a store. Everything in it can be recomputed from Kafka or S3."</em></p>
+<hr />
+<h2 id="12-the-storage-worker-pods">12. The storage worker pods</h2>
+<h3 id="121-why-a-plain-python-consumer-instead-of-spark">12.1 Why a plain Python consumer instead of Spark</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Spark pod</th>
+<th>Python pod</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAM</td>
+<td>~1.5 GB (JVM)</td>
+<td><strong>~107 MB actual</strong></td>
+</tr>
+<tr>
+<td>Pods per t3.medium</td>
+<td>~2</td>
+<td><strong>~8</strong></td>
+</tr>
+<tr>
+<td>Startup</td>
+<td>JVM + session init</td>
+<td>~seconds</td>
+</tr>
+</tbody>
+</table></div>
+<p>The work is trivial — poll, buffer, serialize Parquet, PUT, <code>update_item</code>. No joins, no windowing, no shuffles. Paying a distributed engine's overhead for that is waste; <strong>6× the pod density directly raises the throughput ceiling</strong> for the same node.</p>
+<h3 id="122-consumer-configuration-and-the-rebalance-storm-fix">12.2 Consumer configuration and the rebalance-storm fix</h3>
+<pre><code class="language-python">consumer = KafkaConsumer(
+    KAFKA_TOPIC,
+    group_id=CONSUMER_GROUP_ID,          # edtech-storage-group
+    auto_offset_reset=&quot;latest&quot;,
+    enable_auto_commit=True,
+    auto_commit_interval_ms=5000,
+    fetch_max_bytes=52428800,            # 50 MB per poll
+    max_partition_fetch_bytes=1048576,   # 1 MB per partition
+    consumer_timeout_ms=2000,
+    # ── scale-out race-condition mitigations ──
+    heartbeat_interval_ms=10000,   # prove liveness every 10s
+    session_timeout_ms=45000,      # tolerate 45s without heartbeat
+    max_poll_interval_ms=120000,   # allow 2 min between polls
+)
+</code></pre>
+<p><strong>The war story in full:</strong>
+- <strong>Symptom:</strong> scaling 1→10 pods made lag <em>spike</em> and pods thrash — the opposite of intended.
+- <strong>Root cause:</strong> every pod joining a consumer group triggers a <strong>group rebalance</strong> (partitions are re-assigned, and consumers briefly stop). With the default <code>session_timeout_ms=10000</code>, when 8+ consumers negotiate simultaneously a pod can miss its heartbeat window mid-rebalance → the coordinator evicts it → eviction triggers <em>another</em> rebalance → cascade. Worse, the resulting lag spike made <strong>KEDA add even more pods</strong>, feeding the storm. A genuine positive-feedback failure loop.
+- <strong>Fix and the arithmetic:</strong> <code>session_timeout_ms=45000</code> (survive a full multi-consumer rebalance cycle), <code>heartbeat_interval_ms=10000</code> (<strong>must be &lt; session_timeout/3</strong> — 10 s &lt; 15 s ✓, so up to two heartbeats can be lost before eviction), <code>max_poll_interval_ms=120000</code> (a slow S3 flush must not look like a dead consumer).
+- <strong>Lesson:</strong> <em>"Elastic consumers and consumer-group rebalance timing interact violently. Autoscaling a stateful group means tuning the group protocol, not just the replica count."</em></p>
+<h3 id="123-the-main-loop">12.3 The main loop</h3>
+<pre><code class="language-python">while _running:
+    records = consumer.poll(timeout_ms=1000, max_records=2000)
+    for _, messages in records.items():
+        for msg in messages:
+            if isinstance(msg.value, dict):
+                buffer.append(msg.value)
+    # ... lag gauge computed from assignment() / end_offsets() / committed()
+    if len(buffer) &gt;= FLUSH_EVENTS or (now - last_flush) &gt;= FLUSH_SECS:
+        _flush(buffer)          # S3 Parquet + DynamoDB UserStats + CourseStats
+</code></pre>
+<p>Each pod also computes its <strong>own</strong> lag (<code>end_offset − committed</code> over its assigned partitions) and exposes it on <code>:8001</code> — per-pod observability independent of KEDA's own polling.</p>
+<h3 id="124-sigterm-graceful-drain">12.4 SIGTERM graceful drain</h3>
+<pre><code class="language-python">def _handle_signal(sig, frame):
+    global _running
+    log.info(&quot;Signal %s received — draining buffer and shutting down&quot;, sig)
+    _running = False        # exit the loop; do NOT die immediately
+
+signal.signal(signal.SIGTERM, _handle_signal)
+signal.signal(signal.SIGINT,  _handle_signal)
+...
+# after the loop:
+_flush(buffer)      # drain up to 5,000 buffered events to S3 + DynamoDB
+consumer.close()    # leave the group cleanly → fast, clean rebalance
+</code></pre>
+<p><strong>Why it matters:</strong> in a KEDA-scaled deployment the <em>most common</em> pod death is a <strong>planned</strong> scale-in, not a crash. Kubernetes sends SIGTERM and waits <code>terminationGracePeriodSeconds</code> before SIGKILL. Without a handler, every scale-in would discard the in-memory buffer.</p>
+<p><strong>Measured:</strong> mean drain <strong>4.7 s</strong>, grace period <strong>60 s</strong> (≈12× headroom), <strong>0 events lost across 3 forced terminations</strong>.</p>
+<p><code>consumer.close()</code> is not cosmetic — leaving the group explicitly triggers an immediate clean rebalance instead of making the coordinator wait out <code>session_timeout_ms</code>.</p>
+<h3 id="125-deployment-mechanics-the-configmap-mounted-script">12.5 Deployment mechanics — the ConfigMap-mounted script</h3>
+<p>No Docker image was built. The deployment uses stock <code>python:3.11-slim</code> with:
+- an <strong>init container</strong> running <code>pip install kafka-python boto3 pyarrow prometheus_client lz4 -t /packages</code> into a shared <code>emptyDir</code>
+- the main container running <code>PYTHONPATH=/packages python3 /scripts/storage_worker.py</code>, where <code>/scripts</code> is <code>storage_worker.py</code> mounted from a <strong>ConfigMap</strong></p>
+<p><strong>Trade-off to state honestly:</strong> <em>"This avoids needing a registry and makes iteration instant — edit the ConfigMap, restart. The cost is ~60–90 s of pip install on every pod start, which is why <code>initialDelaySeconds</code> is 90 and why pod startup dominates recovery time. In production I'd bake an image and push to ECR; startup would drop to seconds and installs would be reproducible."</em> That's a textbook prototype-vs-production trade-off.</p>
+<h3 id="126-probes-and-resources">12.6 Probes and resources</h3>
+<pre><code class="language-yaml">resources:
+  requests: { cpu: &quot;250m&quot;, memory: &quot;256Mi&quot; }   # what the scheduler reserves
+  limits:   { cpu: &quot;500m&quot;, memory: &quot;512Mi&quot; }   # hard ceiling
+livenessProbe:  { path: /metrics, port: 8001, initialDelaySeconds: 90, periodSeconds: 30, failureThreshold: 3 }
+readinessProbe: { path: /metrics, port: 8001, initialDelaySeconds: 90, periodSeconds: 15 }
+terminationGracePeriodSeconds: 60
+</code></pre>
+<ul>
+<li><strong>requests vs limits:</strong> requests drive <em>scheduling</em> (10 pods × 250m = 2,500m &gt; the 2,000m on a t3.medium → <strong>4 pods go Pending</strong>, which is precisely the trigger for Tier-2 node scaling). Limits prevent one pod starving others.</li>
+<li><strong>The <code>/metrics</code> endpoint doubles as the health check</strong> — no separate health server. If the Prometheus HTTP thread is dead, the process is unhealthy by definition.</li>
+<li><strong><code>initialDelaySeconds: 90</code></strong> exists <em>because of</em> the pip-install init container — probing earlier would kill pods during startup, creating a crash loop. Real dependency between two design choices.</li>
+</ul>
+<hr />
+<h2 id="13-k3s-keda-tier-1-scaling">13. k3s + KEDA — Tier 1 scaling</h2>
+<h3 id="131-the-layering-a-very-common-point-of-confusion">13.1 The layering (a very common point of confusion)</h3>
+<ul>
+<li><strong>Kubernetes (k8s)</strong> — the orchestration platform/API</li>
+<li><strong>k3s</strong> — a <em>lightweight distribution</em> of Kubernetes; same API, single binary, minimal control-plane overhead. Fits on a t3.medium alongside Spark, Redis and Grafana. (Analogy: k8s is "a Linux," k3s is a small distro of it.)</li>
+<li><strong>KEDA</strong> — an <em>add-on installed inside</em> the cluster (v2.13.1) that provides event-driven autoscaling</li>
+</ul>
+<p><strong>Under the hood:</strong> KEDA doesn't replace Kubernetes scaling — it <strong>feeds an external metric into a standard HPA</strong>. Chain: <code>KEDA (reads Kafka lag) → HPA → Deployment replicas → k3s schedules pods</code>. So "KEDA vs HPA" is a false dichotomy: KEDA <em>drives</em> an HPA with a better metric than CPU.</p>
+<h3 id="132-why-k3s-over-eks">13.2 Why k3s over EKS</h3>
+<p>EKS costs a control plane (~$0.10/h) plus CNI/DNS overhead, on a 2-node student deployment. k3s gives identical pod lifecycle, HPA, probes, and scheduling for ~zero overhead. <strong>When you'd switch:</strong> ≥3 worker nodes, m5.large+, or when you want managed upgrades/HA control plane.</p>
+<h3 id="133-the-scaledobject">13.3 The ScaledObject</h3>
+<pre><code class="language-yaml">spec:
+  scaleTargetRef: { name: edtech-storage-worker }
+  minReplicaCount: 1
+  maxReplicaCount: 10          # = partition count
+  pollingInterval: 15          # seconds
+  cooldownPeriod: 120          # seconds at lag 0 before scaling in
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: &quot;3.7.163.17:9093&quot;
+        consumerGroup:    &quot;edtech-storage-group&quot;
+        topic:            &quot;edtech-events&quot;
+        lagThreshold:     &quot;100&quot;
+        offsetResetPolicy: &quot;latest&quot;
+</code></pre>
+<p><strong>The scaling math:</strong> <code>desiredReplicas = ceil(totalLag / lagThreshold)</code>, clamped to <code>[1, 10]</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Load</th>
+<th>ev/s</th>
+<th>Est. lag</th>
+<th>Formula</th>
+<th>Actual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1×</td>
+<td>30</td>
+<td>~0</td>
+<td>ceil(0/100)=0 → 1</td>
+<td>1 (min)</td>
+</tr>
+<tr>
+<td>3×</td>
+<td>90</td>
+<td>~300</td>
+<td>ceil(300/100)=3</td>
+<td>3</td>
+</tr>
+<tr>
+<td>10×</td>
+<td>300</td>
+<td>~3,000</td>
+<td>ceil(3000/100)=30</td>
+<td><strong>10 (capped)</strong></td>
+</tr>
+<tr>
+<td>100×</td>
+<td>3,000</td>
+<td>~30,000</td>
+<td>ceil(30000/100)=300</td>
+<td><strong>10 (capped)</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Every parameter defended:</strong>
+- <strong><code>lagThreshold: 100</code></strong> — "how many events one pod may be behind before adding another." Lower = twitchier; higher = laggier. 100 is small enough to react within a poll but large enough not to scale on noise.
+- <strong><code>maxReplicaCount: 10</code></strong> — hard-tied to partition count. <strong>An 11th pod would receive no partition assignment and idle.</strong> Naming this shows you understand the Kafka consumer model.
+- <strong><code>minReplicaCount: 1</code></strong> — never scale to zero, so there's always a live consumer holding group membership and no cold-start on the first event.
+- <strong><code>pollingInterval: 15 s</code></strong> — the reaction-time floor. Measured 1→5 pods in ~20 s (first poll after breach), 5→10 in ~40 s (second poll).
+- <strong><code>cooldownPeriod: 120 s</code></strong> — prevents scale-in thrash. All 10 partitions can flush simultaneously, producing a <em>momentary</em> lag=0 that doesn't mean load has ended.</p>
+<h3 id="134-why-not-cpu-based-hpa-the-crisp-argument">13.4 Why not CPU-based HPA — the crisp argument</h3>
+<p>Storage pods are <strong>I/O-bound</strong>: they block on network calls to S3 and DynamoDB. CPU stays <strong>under 20%</strong> even at 50,000 events of lag. An HPA watching CPU would sit at 1 replica while the backlog grew unbounded. <strong>CPU is a proxy; lag is the actual quantity of interest.</strong> Response time also differs: HPA on CPU needs a 1–3 min averaging window; KEDA reacts in 15 s.</p>
+<h3 id="135-measured">13.5 Measured</h3>
+<p>1→5 pods in <strong>20 s</strong>; 5→10 in <strong>40 s</strong> total; steady-state lag <strong>5–20 events per partition</strong> (effectively zero); pod RAM <strong>~107 MB</strong>.</p>
+<hr />
+<h2 id="14-terraform-asg-cloudwatch-tier-2-scaling-and-infrastructure">14. Terraform, ASG, CloudWatch — Tier 2 scaling and infrastructure</h2>
+<h3 id="141-why-two-tiers">14.1 Why two tiers</h3>
+<p>KEDA can only place pods on <strong>existing nodes</strong>. At 10 pods × 250m = 2,500m requested against 2,000m available on EC2-2, <strong>4 pods go Pending</strong> — KEDA has hit its ceiling and more pods won't help. Only a <em>new node</em> fixes that.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Tier 1 — KEDA</th>
+<th>Tier 2 — ASG</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit</td>
+<td>Pod (container)</td>
+<td>EC2 node (VM)</td>
+</tr>
+<tr>
+<td>Signal</td>
+<td>Kafka lag</td>
+<td>EC2-2 CPU &gt; 70% (2 min)</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>~20–40 s</td>
+<td>~3–4 min (boot + k3s join ≈ 90 s)</td>
+</tr>
+<tr>
+<td>Range</td>
+<td>1→10</td>
+<td>0→N</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ordering matters: <strong>pods first (cheap, fast), nodes only when pods can't schedule</strong> — minimizes node churn since nodes are slow and expensive.</p>
+<h3 id="142-the-cloudwatch-no-data-at-zero-trap">14.2 The CloudWatch "no data at zero" trap</h3>
+<pre><code class="language-hcl">resource &quot;aws_cloudwatch_metric_alarm&quot; &quot;high_cpu&quot; {
+  evaluation_periods = 2
+  period             = 60
+  threshold          = 70
+  treat_missing_data = &quot;notBreaching&quot;
+  dimensions = { InstanceId = data.aws_instance.ec2_2.id }   # EC2-2, NOT the ASG
+}
+</code></pre>
+<p><strong>The problem:</strong> the natural instinct is to watch the ASG's average CPU. But the ASG <strong>starts at 0 instances</strong> — with no instances there is no CPU metric, the alarm sits in <code>INSUFFICIENT_DATA</code>, and <strong>scale-out can never trigger</strong>. A bootstrapping paradox: the metric that would create the first node only exists after the first node exists.</p>
+<p><strong>The fix:</strong> watch <strong>EC2-2</strong>, which is always running. Its CPU rising is a valid proxy for "the k3s server is saturated and pods are stuck Pending." And <code>treat_missing_data = "notBreaching"</code> keeps the scale-in alarm silent when the ASG is at 0.</p>
+<p><strong>Lesson to state:</strong> <em>"An autoscaling trigger must be observable before the resource it scales exists."</em> Genuinely memorable.</p>
+<h3 id="143-node-bootstrap-launch-template-userdata">14.3 Node bootstrap (launch template userdata)</h3>
+<ol>
+<li><code>apt-get install curl jq awscli</code></li>
+<li>Read the k3s join token from <strong>SSM SecureString</strong> <code>/edtech/k3s-token</code></li>
+<li>Discover EC2-2's <strong>private</strong> IP via <code>describe-instances</code> filtered on <code>tag:Name=spark-redis</code> (tags, not hardcoded IPs — Idea 6)</li>
+<li><code>curl -sfL https://get.k3s.io | K3S_URL=... K3S_TOKEN=... INSTALL_K3S_EXEC="agent" sh -</code></li>
+<li>Node registers → the scheduler immediately places Pending pods</li>
+</ol>
+<p>Note the deliberate use of the <strong>private</strong> IP: cluster traffic stays inside the VPC (cheaper, faster, safer) even though EC2-2 has a public EIP.</p>
+<h3 id="144-policies">14.4 Policies</h3>
+<ul>
+<li><strong>Scale-out:</strong> +1 instance, <code>cooldown = 180 s</code> — deliberately longer than the ~90 s k3s agent boot, so the alarm can't add a second node before the first one is even useful.</li>
+<li><strong>Scale-in:</strong> −1 instance when ASG avg CPU &lt; 25% for <strong>10 consecutive minutes</strong>, <code>cooldown = 300 s</code>. Asymmetric on purpose: <strong>scale out fast, scale in slow.</strong> Being slow to release capacity is cheap; being slow to add it violates the SLA.</li>
+<li><code>min_size = 0</code> → <strong>zero idle EC2 cost</strong> at baseline.</li>
+</ul>
+<h3 id="145-the-rest-of-the-terraform-estate">14.5 The rest of the Terraform estate</h3>
+<ul>
+<li><strong>S3:</strong> versioning on; <strong>lifecycle → GLACIER after 30 days</strong>; full public-access block</li>
+<li><strong>DynamoDB ×3:</strong> <code>UserStats</code> (PK <code>user_id</code>, SK <code>date</code>), <code>CourseStats</code> (PK <code>course_id</code>, SK <code>date</code>), <code>DailyReports</code> (PK <code>report_date</code>) — all <strong>PAY_PER_REQUEST</strong> (no idle cost, no capacity planning)</li>
+<li><strong>IAM:</strong> one role + instance profile; scoped S3/DynamoDB actions, <code>ec2:DescribeInstances</code> (for Prometheus EC2 service discovery), <code>ssm:GetParameter</code> on <code>/edtech/*</code>. <strong>No credentials anywhere in code</strong> — instance-profile auth throughout.</li>
+<li><strong>SSM SecureString</strong> for the k3s token, with <code>lifecycle { ignore_changes = [value] }</code> so a later <code>terraform apply</code> can't clobber the real token written by <code>setup_k3s.sh</code></li>
+<li><strong>EIP + association</strong> for EC2-1</li>
+<li><strong>Security groups</strong> for Kafka 9092/9093, Grafana 3000, Prometheus 9090, Spark metrics 8000, Redis 6379 (VPC-only), k3s API 6443, Flannel VXLAN 8472/udp</li>
+</ul>
+<hr />
+<h2 id="15-s3-the-parquet-data-lake">15. S3 — the Parquet data lake</h2>
+<h3 id="151-what-parquet-lake-means">15.1 What "Parquet lake" means</h3>
+<ul>
+<li><strong>Data lake</strong> — raw, event-granular data in cheap object storage, queried later (<em>schema-on-read</em>), as opposed to a warehouse that models data on write</li>
+<li><strong>Parquet</strong> — Apache Parquet, a <strong>columnar</strong> file format: stores column-by-column so similar values sit together (far better compression) and a query reads only the columns it needs</li>
+</ul>
+<p><strong>Important clarification:</strong> these aren't two steps. The lake <em>is</em> Parquet — raw events are written directly in Parquet. "Raw" means <strong>event-level granularity, not aggregated</strong>; it does <em>not</em> mean raw JSON. (Pipeline 1 stored literal raw JSON; Pipeline 2 upgraded to Parquet.)</p>
+<h3 id="152-how-data-is-actually-written-a-commonly-misunderstood-sequence">15.2 How data is actually written (a commonly-misunderstood sequence)</h3>
+<ol>
+<li>Event JSON arrives from Kafka → deserialized to a dict (a <strong>row</strong>)</li>
+<li>Appended to an <strong>in-memory buffer</strong> — still row-oriented, uncompressed, nothing on S3 yet</li>
+<li><strong>Flush trigger:</strong> buffer ≥ threshold <strong>OR</strong> 5 minutes elapsed</li>
+<li>The whole buffer is pivoted <strong>rows → columns</strong>, compressed with <strong>snappy</strong>, written as <strong>one new Parquet object</strong></li>
+<li>Buffer cleared, accumulate the next file</li>
+</ol>
+<p>Columnar conversion happens <strong>once, at flush</strong>, not per-event. And every flush is a <strong>separate immutable object</strong> — you never append to an existing S3 object.</p>
+<h3 id="153-partitioning">15.3 Partitioning</h3>
+<pre><code>s3://edtech-pipeline-data-c956dd9c/raw/year=2026/month=04/day=16/hour=22/1776377657_6b9ac8dd.parquet
+</code></pre>
+<p><strong>Hive-style partitioning</strong> (<code>key=value</code> directories) means query engines can do <strong>partition pruning</strong> — the nightly job reads exactly one day's prefix instead of scanning the bucket. The filename is <code>{unix_epoch}_{uuid8}</code> — the <strong>UUID suffix prevents collisions between concurrent pods</strong> flushing in the same second.</p>
+<h3 id="154-compression-choice">15.4 Compression choice</h3>
+<p><strong>snappy</strong> — the Parquet default; optimized for speed over ratio. Same reasoning as lz4 on the wire: CPU is scarcer than storage.</p>
+<h3 id="155-lifecycle">15.5 Lifecycle</h3>
+<p>Objects transition to <strong>GLACIER after 30 days</strong>. Access pattern justifies it: the batch job reads <em>yesterday</em>; data older than a month is essentially never read but must be retained.</p>
+<hr />
+<h2 id="16-dynamodb-analytical-store">16. DynamoDB — analytical store</h2>
+<h3 id="161-why-dynamodb-and-why-pay_per_request">16.1 Why DynamoDB, and why PAY_PER_REQUEST</h3>
+<p>Serverless, <strong>zero idle cost</strong>, IAM instance-role auth, single-digit-ms item access, and — critically — <strong>atomic item-level updates</strong> from many concurrent writers. PAY_PER_REQUEST removes capacity planning for a spiky workload; provisioned capacity would need to be sized for the 10× peak and wasted at baseline.</p>
+<h3 id="162-the-add-vs-put-decision-the-key-correctness-insight">16.2 The <code>ADD</code> vs <code>PUT</code> decision — the key correctness insight</h3>
+<pre><code class="language-python">update_expr = (&quot;ADD total_events :n, total_sessions :s&quot;
+               &quot; SET last_event_type = :lt, last_seen = :ls&quot;)
+table.update_item(
+    Key={&quot;user_id&quot;: uid, &quot;date&quot;: today},
+    UpdateExpression=update_expr,
+    ExpressionAttributeValues=expr_vals,
+)
+</code></pre>
+<p>Up to 10 pods write concurrently, each seeing a <em>different subset</em> of events.
+- <strong><code>PUT</code></strong> (or read-modify-write) → last writer wins → <strong>lost updates</strong>. Pod A reads 100, Pod B reads 100, both write 150 → final 150 instead of 200.
+- <strong><code>ADD</code></strong> → an <strong>atomic server-side increment</strong>. Each pod submits only its <em>delta</em>; DynamoDB serializes them. No read, no race, no locking.</p>
+<p><strong>The general principle to articulate:</strong> <em>"Make concurrent writes commutative and you don't need coordination."</em> <code>ADD</code> is commutative and associative, so ordering is irrelevant.</p>
+<p>Counters use <code>ADD</code>; last-seen fields use <code>SET</code> (last-writer-wins is semantically correct for "most recent"). Averages are <code>SET</code> per batch — an acknowledged approximation (last batch's average, not a global one); a true running mean would require storing sum and count and dividing on read.</p>
+<h3 id="163-tables">16.3 Tables</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Table</th>
+<th>PK</th>
+<th>SK</th>
+<th>Written by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UserStats</code></td>
+<td><code>user_id</code></td>
+<td><code>date</code></td>
+<td>storage pods (stream)</td>
+</tr>
+<tr>
+<td><code>CourseStats</code></td>
+<td><code>course_id</code></td>
+<td><code>date</code></td>
+<td>storage pods (stream)</td>
+</tr>
+<tr>
+<td><code>DailyReports</code></td>
+<td><code>report_date</code></td>
+<td>—</td>
+<td>nightly batch</td>
+</tr>
+</tbody>
+</table></div>
+<p>The composite <code>(id, date)</code> key gives natural daily partitioning and cheap per-day queries.</p>
+<h3 id="164-failure-behavior">16.4 Failure behavior</h3>
+<p><code>update_item</code> failures are caught per-item and logged — one bad user doesn't abort the batch. PAY_PER_REQUEST auto-scales; the SDK retries with exponential backoff. Because writes are idempotent-ish (<code>ADD</code> of a delta), a retried batch could double-count — a real trade-off, mitigated in practice by upstream dedup.</p>
+<hr />
+<h2 id="17-the-nightly-batch-job">17. The nightly batch job</h2>
+<h3 id="171-why-batch-at-all-justifying-lambda-architecture">17.1 Why batch at all (justifying Lambda architecture)</h3>
+<p>Daily aggregates — pass-rate distributions, hourly histograms, per-course rollups — need <strong>the whole day's data at once</strong>, have <strong>no latency requirement</strong>, and are <strong>cheaper computed once</strong> than maintained continuously. That's the textbook case for batch. Streaming everything would be more complex <em>and</em> more expensive for numbers nobody reads until tomorrow.</p>
+<h3 id="172-reading-s3-without-hadoop-aws">17.2 Reading S3 without hadoop-aws</h3>
+<pre><code class="language-python">import pyarrow.dataset as ds
+from pyarrow.fs import S3FileSystem
+s3_fs   = S3FileSystem(region=AWS_REGION)
+dataset = ds.dataset(f&quot;{S3_BUCKET}/{prefix}&quot;, filesystem=s3_fs, format=&quot;parquet&quot;)
+table   = dataset.to_table()
+pdf     = table.to_pandas()
+return spark.createDataFrame(pdf)
+</code></pre>
+<p><strong>Why not <code>spark.read.parquet("s3a://...")</code>?</strong> That needs the <code>hadoop-aws</code> + <code>aws-java-sdk</code> JARs, version-matched to Spark — a classic dependency-hell problem. PyArrow's <code>S3FileSystem</code> picks up the <strong>IAM instance role</strong> directly. Honest trade-off: it materializes through pandas (single-node memory) — fine at 267k events (~67 MiB), would need the JARs at much larger scale.</p>
+<p><strong>Interview framing:</strong> <em>"I optimized for operational simplicity at known data volume, and I know exactly where that choice breaks."</em></p>
+<h3 id="173-outputs-and-hygiene">17.3 Outputs and hygiene</h3>
+<p>Writes <strong>DynamoDB <code>DailyReports</code></strong> (one item for the day) plus a Parquet summary at <code>reports/daily/{date}/report.parquet</code>. <code>_to_dynamo()</code> strips <strong>NaN/Inf</strong> (DynamoDB cannot store them) and converts floats to <code>Decimal</code> — a small but real correctness detail that bites people in production.</p>
+<p><strong>Measured:</strong> 267,759 events / 125 files / 66.9 MiB in <strong>~113 s mean</strong> (118 s single run), against an 8-hour overnight window — ~250× headroom. <code>df.cache()</code> before the many per-event-type filters avoids re-reading for each.</p>
+<h3 id="174-scheduling-cron-vs-airflow">17.4 Scheduling: cron vs Airflow</h3>
+<p>Runs via <code>cron</code> at midnight UTC. A <strong>production-ready Airflow DAG is provided</strong> (<code>dags/batch_reports_dag.py</code>: <code>start → verify_s3_data → run_batch_report → end</code>, <code>0 0 * * *</code>, 2 retries, 30-min timeout) but is not deployed.</p>
+<p><strong>The justification:</strong> Airflow needs a Postgres metadata DB + scheduler + webserver (&gt;1 GB RAM) on a t3.medium already running Spark, Redis, k3s and Grafana. For <strong>one</strong> independent daily job, cron delivers the same outcome at zero overhead. <strong>When to switch:</strong> ≥3 interdependent jobs, or when you need backfills, retries with visibility, SLA alerts, and a dependency DAG UI.</p>
+<hr />
+<h2 id="18-prometheus-and-grafana-observability">18. Prometheus and Grafana — observability</h2>
+<h3 id="181-the-two-datasource-design">18.1 The two-datasource design</h3>
+<p>Grafana reads from <strong>both</strong>, and the split is meaningful:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Datasource</th>
+<th>Serves</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Redis</strong></td>
+<td>Current KPI <strong>values</strong></td>
+<td>active users <em>right now</em>, dropout %, top-5 courses</td>
+</tr>
+<tr>
+<td><strong>Prometheus</strong></td>
+<td><strong>Time series</strong> / rates / histograms</td>
+<td>batch duration over time, lag trend, events/sec, S3 flush counts</td>
+</tr>
+</tbody>
+</table></div>
+<p>Mental model: <strong>Redis = live snapshot; Prometheus = history and system health; Grafana = the single screen rendering both.</strong></p>
+<h3 id="182-metrics-exposed">18.2 Metrics exposed</h3>
+<p>Spark on <code>:8000</code>, pods on <code>:8001</code> (different ports so both can be scraped on one node):
+- <code>pipeline_batch_duration_seconds</code> (Histogram — gives P95 for free)
+- <code>pipeline_events_processed_total</code>, <code>pipeline_events_deduped_total</code> (Counters)
+- <code>pipeline_kafka_consumer_lag</code>, <code>pipeline_surge_detected</code>, <code>pipeline_active_users_gauge</code>, <code>pipeline_dropout_rate_gauge</code>, <code>pipeline_avg_engagement_gauge</code>, <code>pipeline_s3_cost_reduction_pct</code> (Gauges)
+- Labeled vectors: <code>pipeline_course_joins{course}</code>, <code>pipeline_device_events{device}</code>, <code>pipeline_region_users{region}</code>, <code>pipeline_event_type_count{event_type}</code>, <code>pipeline_avg_score_by_difficulty{difficulty}</code>, <code>pipeline_subscription_events{subscription}</code>
+- Worker side: <code>worker_events_processed_total</code>, <code>worker_s3_flushes_total</code>, <code>worker_flush_duration_seconds</code>, <code>worker_kafka_lag</code>, <code>worker_buffer_size</code>, <code>worker_dynamo_writes_total</code></p>
+<p><strong>Counter vs Gauge vs Histogram</strong> — know the distinction cold: a <strong>Counter</strong> only increases (use <code>rate()</code> to get per-second); a <strong>Gauge</strong> goes up and down (current value); a <strong>Histogram</strong> buckets observations so you can compute quantiles. Choosing correctly is what makes the dashboard meaningful.</p>
+<h3 id="183-ec2-service-discovery-the-detail-that-shows-operational-thinking">18.3 EC2 service discovery — the detail that shows operational thinking</h3>
+<pre><code class="language-yaml">- job_name: 'spark_pipeline_asg'
+  ec2_sd_configs:
+    - region: ap-south-1
+      port: 8000
+      filters:
+        - { name: &quot;tag:Project&quot;, values: [&quot;edtech-pipeline&quot;] }
+        - { name: &quot;tag:Name&quot;,    values: [&quot;edtech-consumer-asg&quot;] }
+        - { name: &quot;instance-state-name&quot;, values: [&quot;running&quot;] }
+  relabel_configs:
+    - source_labels: [__meta_ec2_private_ip]
+      target_label: __address__
+      replacement: '${1}:8000'
+</code></pre>
+<p><strong>Why this is necessary:</strong> ASG instances are ephemeral — you cannot maintain a static target list for machines that don't exist yet. Prometheus queries the EC2 API and discovers them by tag, then relabels to the <strong>private IP</strong> so scraping stays inside the VPC. <strong>Autoscaling infrastructure requires auto-discovering monitoring</strong>; a static config would silently stop covering new nodes exactly when load is highest.</p>
+<hr />
+<h1 class="part" id="part-iv-cross-cutting-analysis">PART IV — CROSS-CUTTING ANALYSIS</h1>
+<h2 id="19-life-of-an-event-the-complete-trace">19. Life of an event — the complete trace</h2>
+<p><strong>T+0 ms — Generation (EC2-1).</strong> The state machine picks an online user in <code>IN_CLASS</code> and emits <code>session_end</code> with <code>event_id</code>, <code>user_id</code>, <code>score</code>, <code>engagement_score</code>, <code>class_id</code>, plus derived <code>hour_of_day</code> / <code>is_weekend</code>.</p>
+<p><strong>T+0–10 ms — Produce.</strong> Serialized to JSON, keyed by <code>user_id</code>, lz4-compressed, buffered up to <code>linger_ms=10</code>, sent to <code>edtech-events</code>. The key hashes to one of 10 partitions — the <em>same</em> partition every time for this user, so their events stay ordered. Broker acknowledges (<code>acks=1</code>) and writes to disk with 24 h retention.</p>
+<p><strong>Now the event is consumed twice, independently.</strong></p>
+<h3 id="path-a-monitoring-latency-critical">Path A — Monitoring (latency-critical)</h3>
+<p><strong>T+0–10 s — wait.</strong> The event sits until the next 10 s micro-batch trigger. <em>This wait dominates end-to-end latency.</em>
+<strong>T+~10 s — batch.</strong> Spark fetches (capped at 30,000 offsets), parses JSON against the 37-field schema, and <code>collect()</code>s the batch to the driver — one action.
+<strong>Dedup:</strong> <code>SADD pipeline:dedup_event_ids &lt;event_id&gt;</code> → 1 (new) → kept.
+<strong>Surge check:</strong> <code>current_rate</code> vs the 5-min rolling average; if &gt; 1.5×, set <code>pipeline:surge_detected=1</code> and forward <code>class_join</code>/<code>session_start</code> to <code>edtech-priority</code>.
+<strong>KPIs:</strong> ~15 metrics computed in pure Python; this <code>session_end</code> contributes to <code>active_users</code>, <code>avg_engagement_score</code>, <code>avg_score_by_difficulty</code>, <code>session_completion_rate</code>.
+<strong>Write:</strong> Redis MSET with tiered TTLs; Prometheus gauges updated; checkpoint committed (0.5 s).
+<strong>T+~12 s — visible.</strong> Grafana polls Redis; <strong>GET takes 0.277 ms</strong>. Worst-case event→dashboard ≈ <strong>12.6 s</strong> (10 s trigger + 2.6 s batch).</p>
+<h3 id="path-b-storage-throughput-critical">Path B — Storage (throughput-critical)</h3>
+<p><strong>T+0–1 s — poll.</strong> A storage pod polls its assigned partition(s) and appends the event to its in-memory buffer. Lag gauge updated.
+<strong>T+0–5 min — buffer.</strong> The event waits for a flush trigger (≥5,000 events or 300 s).
+<strong>At flush:</strong> the whole buffer becomes one PyArrow table (15 typed columns) → snappy-compressed Parquet → <code>PUT</code> to <code>s3://.../raw/year=/month=/day=/hour=/{epoch}_{uuid8}.parquet</code>. Then per-user and per-course aggregation, and <code>update_item</code> with <strong><code>ADD</code></strong> deltas into <code>UserStats</code> / <code>CourseStats</code>. Offsets auto-commit every 5 s.</p>
+<h3 id="path-c-batch-next-midnight">Path C — Batch (next midnight)</h3>
+<p>Cron fires <code>batch_reports.py</code>; PyArrow reads that day's prefix (partition pruning), converts to a Spark DataFrame, computes daily aggregates (pass rates by course and difficulty, hourly histogram, device split, DAU), writes <code>DailyReports</code> + a Parquet summary. ~113 s for ~268k events.</p>
+<p><strong>T+30 days —</strong> the Parquet object transitions to Glacier.</p>
+<hr />
+<h2 id="20-fault-tolerance-the-complete-model">20. Fault tolerance — the complete model</h2>
+<h3 id="201-the-layered-guarantee">20.1 The layered guarantee</h3>
+<pre><code>Layer 0 — Kafka durability          Every event on disk, 24h retention. The universal safety net.
+Layer 1 — Spark checkpoint          Offsets committed only after batch success → effectively-once.
+Layer 2 — Consumer group offsets    Pods auto-commit every 5s; uncommitted work is re-delivered.
+Layer 3 — SIGTERM drain             Buffer flushed before exit on planned termination → 0 loss.
+Layer 4 — k8s liveness probes       Dead pod detected and restarted; resumes from last offset.
+Layer 5 — systemd restarts          Spark/Kafka/Redis auto-restart on crash.
+Layer 6 — ASG health checks         Unhealthy node terminated and replaced; Kafka rebalances.
+</code></pre>
+<p><strong>The core reasoning to state:</strong> <em>"Every processing component is a stateless reader over a durable log. That means no component's failure can lose data — the worst case is re-processing from the last committed offset. All the fault-tolerance work is really about (a) committing offsets at the right moment and (b) draining in-memory buffers before a planned exit."</em></p>
+<h3 id="202-what-the-guarantees-actually-are-be-precise-this-earns-credibility">20.2 What the guarantees actually are (be precise — this earns credibility)</h3>
+<ul>
+<li><strong>Kafka delivery:</strong> <strong>at-least-once</strong></li>
+<li><strong>Spark processing:</strong> <strong>effectively-once</strong> — checkpoint commits after success, so a crash replays the last uncommitted batch; the replay is safe because Redis writes are idempotent overwrites</li>
+<li><strong>DynamoDB:</strong> <strong>commutative</strong> — <code>ADD</code> deltas, so concurrency is safe, though a replayed batch can double-count</li>
+<li><strong>S3:</strong> <strong>at-most-once per flush under graceful shutdown; potential duplicate object under SIGKILL</strong> mid-flush</li>
+<li><strong>Overall:</strong> <strong>effectively-once at the storage layer for all planned shutdowns</strong>; not true exactly-once</li>
+</ul>
+<p><strong>When asked "is it exactly-once?"</strong> — the strong answer: <em>"No, and I'd be suspicious of anyone claiming it without a transactional sink. It's at-least-once delivery plus idempotent/commutative writes, which gives effectively-once for every planned shutdown path. True EOS needs either Kafka transactions end-to-end or a transactional sink like Iceberg or Delta — which is exactly the upgrade I'd make."</em></p>
+<h3 id="203-complete-failure-matrix">20.3 Complete failure matrix</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Detection</th>
+<th>Recovery</th>
+<th>Data loss</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Generator stops</td>
+<td>Lag drops to 0; no new offsets</td>
+<td>Kafka retains; Spark resumes from checkpoint on restart</td>
+<td><strong>None</strong> (measured: 113 s outage, backlog of 2,219 drained, batch resumed <strong>5 s</strong> after restart)</td>
+</tr>
+<tr>
+<td>Spark/EC2-2 crash</td>
+<td>systemd exit code</td>
+<td>Restart in ~15 s; read checkpoint (&lt;1 s); resume at last offset</td>
+<td><strong>None</strong></td>
+</tr>
+<tr>
+<td>Kafka broker crash</td>
+<td><code>BrokerNotAvailableException</code></td>
+<td>Elastic IP means the address survives; systemd restarts Kafka; consumers reconnect next batch</td>
+<td><strong>None</strong> (buffered in Kafka)</td>
+</tr>
+<tr>
+<td>Pod OOM-kill / crash</td>
+<td>Liveness probe fails (3×30 s)</td>
+<td>k3s restarts pod; re-reads from last committed offset</td>
+<td><strong>None</strong> (uncommitted re-delivered)</td>
+</tr>
+<tr>
+<td>Pod SIGTERM (scale-in / rolling update)</td>
+<td>SIGTERM handler</td>
+<td>Drain buffer → S3 + DynamoDB → close consumer</td>
+<td><strong>None</strong> — measured <strong>0 lost</strong>, 4.7 s mean drain</td>
+</tr>
+<tr>
+<td>Pod SIGKILL (no grace)</td>
+<td>Group session timeout</td>
+<td>Buffer lost in memory, but events uncommitted in Kafka → re-delivered</td>
+<td><strong>None</strong> (≤ ~3,600 events at risk, all recoverable)</td>
+</tr>
+<tr>
+<td>S3 write failure</td>
+<td>boto3 exception</td>
+<td>Spark retries micro-batch; checkpoint not committed until success</td>
+<td><strong>None</strong></td>
+</tr>
+<tr>
+<td>DynamoDB failure/throttle</td>
+<td>SDK exception</td>
+<td>PAY_PER_REQUEST scales; SDK retries with backoff; per-item catch</td>
+<td><strong>None</strong></td>
+</tr>
+<tr>
+<td>Redis down</td>
+<td>Grafana panels show N/A</td>
+<td>systemd restart; Spark retries next batch</td>
+<td><strong>None</strong> — derived data only</td>
+</tr>
+<tr>
+<td>ASG node fails</td>
+<td>EC2 health check</td>
+<td>ASG terminates + replaces; Kafka rebalances partitions in ~30 s</td>
+<td><strong>None</strong></td>
+</tr>
+<tr>
+<td>Surge overload</td>
+<td>Lag rises past threshold</td>
+<td>SurgeDetector routes overflow; KEDA adds pods</td>
+<td><strong>None</strong> — lag bounded at 3,091</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>9/9 scenarios covered; measured uptime 99.9918% over a 17-hour run</strong> (target ≥ 99.9%).</p>
+<h3 id="204-graceful-degradation-tiers">20.4 Graceful degradation tiers</h3>
+<p>The system sheds <em>features</em>, never data, in a fixed priority order:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Trigger</th>
+<th>What degrades</th>
+<th>What's protected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 — Normal</td>
+<td>&lt; 1.5× baseline</td>
+<td>Nothing</td>
+<td>Everything</td>
+</tr>
+<tr>
+<td>1 — Surge</td>
+<td>rate &gt; 1.5× rolling avg</td>
+<td>S3/DynamoDB freshness (pods lag briefly)</td>
+<td>Live Redis KPIs; dashboard</td>
+</tr>
+<tr>
+<td>2 — Storage backpressure</td>
+<td>KEDA at 10 pods, lag &gt; 1,000/partition</td>
+<td>Cold-storage writes delayed</td>
+<td>Monitoring path fully isolated</td>
+</tr>
+<tr>
+<td>3 — Node pressure</td>
+<td>EC2-2 CPU &gt; 70% for 2 min</td>
+<td>4 pods Pending until ASG adds a node</td>
+<td>6 running pods continue; Spark unaffected</td>
+</tr>
+<tr>
+<td>4 — Broker unavailable</td>
+<td>Kafka down</td>
+<td>All consumption pauses; dashboard stale</td>
+<td>Events retained 24 h; nothing lost</td>
+</tr>
+<tr>
+<td>5 — Redis unavailable</td>
+<td>Redis crash</td>
+<td>Grafana shows N/A</td>
+<td>S3/DynamoDB writes continue</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Three principles behind the ordering:</strong> (1) the monitoring path is <em>never</em> sacrificed; (2) data loss is <em>never</em> a degradation option; (3) every tier is automatic — no human in the loop.</p>
+<hr />
+<h2 id="21-optimization-catalogue-every-optimization-and-what-it-bought">21. Optimization catalogue — every optimization and what it bought</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Optimization</th>
+<th>Where</th>
+<th>Mechanism</th>
+<th>Measured effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Adaptive S3 batching</strong></td>
+<td><code>intelligence.py</code></td>
+<td>Buffer; flush ≥10k events OR 300 s</td>
+<td><strong>−87.6% PUTs</strong>, files 8 KB → <strong>536 KB (67×)</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Single <code>collect()</code> per batch</strong></td>
+<td><code>stream_consumer.py</code></td>
+<td>21 Spark actions → 1; KPIs in Python</td>
+<td>Batch time held at <strong>2.0 s</strong> under 10× load</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong><code>shuffle.partitions</code> 200 → 4</strong></td>
+<td>Spark config</td>
+<td>Match parallelism to data size</td>
+<td>Removes ~196 no-op tasks/shuffle</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Python pods instead of Spark pods</strong></td>
+<td><code>storage_worker.py</code></td>
+<td>Drop the JVM</td>
+<td><strong>107 MB vs 1.5 GB → ~6× pod density</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Lag-based scaling (KEDA)</strong></td>
+<td><code>hpa.yaml</code></td>
+<td><code>ceil(lag/100)</code> on the true signal</td>
+<td><strong>1→10 pods in 40 s</strong>; CPU-HPA would never fire</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Scale-to-zero nodes</strong></td>
+<td>ASG <code>min_size=0</code></td>
+<td>Remove idle workers</td>
+<td><strong>$0 idle EC2 cost</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Rebalance-timeout tuning</strong></td>
+<td><code>storage_worker.py</code></td>
+<td><code>session=45 s</code>, <code>heartbeat=10 s</code></td>
+<td>Eliminated the cascading rebalance storm</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Producer batching + lz4</strong></td>
+<td><code>generator.py</code></td>
+<td><code>linger_ms=10</code>, <code>batch_size=64 KB</code></td>
+<td>Higher throughput, less network</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Keying by <code>user_id</code></strong></td>
+<td><code>generator.py</code></td>
+<td>Partition affinity</td>
+<td>Per-user ordering; even distribution</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Tiered Redis TTLs</strong></td>
+<td><code>stream_consumer.py</code></td>
+<td>120 / 360 / 900 s</td>
+<td>Correct staleness semantics per metric</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Atomic DynamoDB <code>ADD</code></strong></td>
+<td>both writers</td>
+<td>Commutative updates</td>
+<td>Correct under 10 concurrent writers, no locking</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Hive partitioning + snappy</strong></td>
+<td>S3 layout</td>
+<td><code>year=/month=/day=/hour=</code></td>
+<td>Partition pruning; batch reads 125 files not 8,640</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Glacier after 30 days</strong></td>
+<td>S3 lifecycle</td>
+<td>Tiering</td>
+<td>Long-term storage cost cut</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>PAY_PER_REQUEST DynamoDB</strong></td>
+<td>Terraform</td>
+<td>Serverless billing</td>
+<td>No idle cost, no capacity planning</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong><code>maxOffsetsPerTrigger</code></strong></td>
+<td>Spark source</td>
+<td>Back-pressure cap</td>
+<td>Prevents unbounded batch after backlog</td>
+</tr>
+<tr>
+<td>16</td>
+<td><strong>Avoiding <code>spark.jars</code></strong></td>
+<td>Spark submit</td>
+<td>JARs pre-placed on classpath</td>
+<td>Avoids <strong>331 MB /tmp copy</strong> per start</td>
+</tr>
+<tr>
+<td>17</td>
+<td><strong>PyArrow S3 instead of s3a</strong></td>
+<td><code>batch_reports.py</code></td>
+<td>IAM-native reads</td>
+<td>No hadoop-aws JAR dependency hell</td>
+</tr>
+<tr>
+<td>18</td>
+<td><strong><code>df.cache()</code> in batch</strong></td>
+<td><code>batch_reports.py</code></td>
+<td>Cache before many filters</td>
+<td>Avoids re-reading per event type</td>
+</tr>
+<tr>
+<td>19</td>
+<td><strong>Redis pipelining for dedup</strong></td>
+<td><code>stream_consumer.py</code></td>
+<td>Batch all <code>SADD</code>s</td>
+<td>One round-trip instead of N</td>
+</tr>
+<tr>
+<td>20</td>
+<td><strong>Prometheus EC2 discovery</strong></td>
+<td><code>prometheus.yml</code></td>
+<td>Tag-based <code>ec2_sd_configs</code></td>
+<td>Monitoring auto-covers new ASG nodes</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>If asked "what's your single best optimization?"</strong> — the adaptive batcher, because it's the one that came from an <em>architectural</em> insight (hot/cold paths have different freshness needs) rather than a knob. <strong>If asked "most surprising?"</strong> — the single-<code>collect()</code>, because the fix was to <em>stop</em> using the distributed engine.</p>
+<hr />
+<h2 id="22-tuning-why-every-number-is-what-it-is">22. Tuning — why every number is what it is</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+<th>Reasoning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kafka partitions</td>
+<td><strong>10</strong></td>
+<td>Parallelism ceiling; matches target max pods; 300 ev/s ÷ 10 ≈ 30 ev/s/pod</td>
+</tr>
+<tr>
+<td>Priority partitions</td>
+<td><strong>3</strong></td>
+<td>Small dedicated lane; overflow is a fraction of total</td>
+</tr>
+<tr>
+<td>Retention</td>
+<td><strong>24 h</strong></td>
+<td>Long enough to survive an overnight outage and replay a full day</td>
+</tr>
+<tr>
+<td>Trigger interval</td>
+<td><strong>10 s</strong></td>
+<td>Balance: shorter → more checkpoint overhead per event; longer → worse latency. Dominates the ~12 s end-to-end</td>
+</tr>
+<tr>
+<td><code>maxOffsetsPerTrigger</code></td>
+<td><strong>30,000</strong></td>
+<td>10× headroom over a 3,000-event 10× batch; caps memory after a backlog</td>
+</tr>
+<tr>
+<td><code>shuffle.partitions</code></td>
+<td><strong>4</strong> (stream) / <strong>2</strong> (batch)</td>
+<td>Data is MBs, not GBs; default 200 is pure scheduling overhead</td>
+</tr>
+<tr>
+<td>Surge threshold</td>
+<td><strong>1.5×</strong></td>
+<td>1.2× → false positives from normal variance; 2.5× → lag accumulates before detection. Measured 1.84× gives <strong>22.7% margin</strong></td>
+</tr>
+<tr>
+<td>Surge exit</td>
+<td><strong>1.1×</strong></td>
+<td>Hysteresis dead band prevents flapping</td>
+</tr>
+<tr>
+<td>Surge hold</td>
+<td><strong>6 batches (~60 s)</strong></td>
+<td>Bursts dip momentarily; prevents 10 s state flipping</td>
+</tr>
+<tr>
+<td>Rolling window</td>
+<td><strong>300 s</strong></td>
+<td>Long enough to smooth noise, short enough to track real trend</td>
+</tr>
+<tr>
+<td><code>FLUSH_EVENTS</code></td>
+<td><strong>10,000</strong> (Spark) / <strong>5,000</strong> (pod)</td>
+<td>Pods see a partition subset → halve to keep flush cadence comparable</td>
+</tr>
+<tr>
+<td><code>FLUSH_SECS</code></td>
+<td><strong>300</strong></td>
+<td>Max acceptable cold-storage staleness; nothing reads S3 before midnight</td>
+</tr>
+<tr>
+<td><code>lagThreshold</code></td>
+<td><strong>100</strong></td>
+<td>Events-behind per pod before adding another; small enough to react, large enough to ignore noise</td>
+</tr>
+<tr>
+<td><code>pollingInterval</code></td>
+<td><strong>15 s</strong></td>
+<td>Reaction-time floor; gives ~20 s to first scale action</td>
+</tr>
+<tr>
+<td><code>cooldownPeriod</code></td>
+<td><strong>120 s</strong></td>
+<td>Simultaneous partition flushes create momentary lag=0; don't scale in on that</td>
+</tr>
+<tr>
+<td><code>maxReplicaCount</code></td>
+<td><strong>10</strong></td>
+<td>= partitions; an 11th pod gets no assignment</td>
+</tr>
+<tr>
+<td><code>minReplicaCount</code></td>
+<td><strong>1</strong></td>
+<td>Keep group membership warm; no cold start</td>
+</tr>
+<tr>
+<td><code>session_timeout_ms</code></td>
+<td><strong>45,000</strong></td>
+<td>Survive a full multi-consumer rebalance (default 10 s caused eviction storms)</td>
+</tr>
+<tr>
+<td><code>heartbeat_interval_ms</code></td>
+<td><strong>10,000</strong></td>
+<td><strong>Must be &lt; session/3</strong> (10 &lt; 15 ✓); tolerates two lost heartbeats</td>
+</tr>
+<tr>
+<td><code>max_poll_interval_ms</code></td>
+<td><strong>120,000</strong></td>
+<td>A slow S3 flush must not look like a dead consumer</td>
+</tr>
+<tr>
+<td><code>terminationGracePeriodSeconds</code></td>
+<td><strong>60</strong></td>
+<td>~12× the measured 4.7 s drain</td>
+</tr>
+<tr>
+<td><code>initialDelaySeconds</code></td>
+<td><strong>90</strong></td>
+<td>pip-install init container takes ~60 s; probing earlier causes crash loops</td>
+</tr>
+<tr>
+<td>CPU request / limit</td>
+<td><strong>250m / 500m</strong></td>
+<td>10 × 250m = 2,500m &gt; 2,000m available → 4 Pending → the Tier-2 trigger</td>
+</tr>
+<tr>
+<td>ASG CPU high</td>
+<td><strong>70% for 2 min</strong></td>
+<td>Sustained saturation, not a transient spike</td>
+</tr>
+<tr>
+<td>ASG CPU low</td>
+<td><strong>25% for 10 min</strong></td>
+<td>Deliberately slow scale-in — releasing capacity early is riskier than paying a little longer</td>
+</tr>
+<tr>
+<td>Scale-out cooldown</td>
+<td><strong>180 s</strong></td>
+<td>Longer than the ~90 s k3s agent boot</td>
+</tr>
+<tr>
+<td>Redis TTLs</td>
+<td><strong>120 / 360 / 900 s</strong></td>
+<td>Encode how quickly each metric becomes wrong</td>
+</tr>
+<tr>
+<td>Glacier transition</td>
+<td><strong>30 days</strong></td>
+<td>Batch reads yesterday; month-old data is effectively archival</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h1 class="part" id="part-v-flaws-gaps-and-critique">PART V — FLAWS, GAPS, AND CRITIQUE</h1>
+<h2 id="23-known-defects-and-inconsistencies">23. Known defects and inconsistencies</h2>
+<p>Volunteering these is a strength — it demonstrates you audit your own work.</p>
+<h3 id="231-real-bugs">23.1 Real bugs</h3>
+<ol>
+<li><strong>Dedup set grows unboundedly.</strong> <code>r.expire(dedup_key, 3600)</code> runs every batch, resetting the TTL, so under continuous traffic the set <em>never</em> expires (~2.6 M members/day at 30 ev/s). It is not the "sliding window" the docs claim. <strong>Fix:</strong> hourly bucketed keys (<code>dedup:{YYYYMMDDHH}</code>) checking current + previous, or per-<code>event_id</code> <code>SETEX</code>, or a Bloom filter.</li>
+<li><strong>Priority topic has no consumer.</strong> The producer half of the QoS pattern ships; nothing subscribes to <code>edtech-priority</code>, so the isolation benefit is theoretical.</li>
+<li><strong><code>acks=1</code> weakens the durability claim</strong> in a replicated setup (moot at RF=1, but it's the wrong default to carry into production alongside <code>retries=3</code> without an idempotent producer).</li>
+</ol>
+<h3 id="232-config-inconsistencies">23.2 Config inconsistencies</h3>
+<ol start="4">
+<li><strong><code>consumer_max_size</code> defaults to <code>5</code></strong> in <code>variables.tf</code> while all documentation says the ASG maxes at 10. The docs describe intent; the code caps at 5.</li>
+<li><strong><code>consumer_min_size</code> is declared but unused</strong> — <code>main.tf</code> hardcodes <code>min_size = 0</code>.</li>
+<li><strong>Checkpoint lives in <code>/tmp</code></strong> — cleared on reboot, so a host restart forces <code>startingOffsets=latest</code> behavior. Should be an EBS-backed path.</li>
+</ol>
+<h3 id="233-security-gaps">23.3 Security gaps</h3>
+<ol start="7">
+<li><strong><code>0.0.0.0/0</code> ingress</strong> on Kafka 9092/9093 and k3s API 6443 — should be SG-to-SG references or VPC CIDRs.</li>
+<li><strong>No TLS/SASL on Kafka</strong> — plaintext traffic and no client authentication.</li>
+<li><strong><code>kafka_key.pem</code> and an AWS access-key CSV sit in the working tree.</strong> Correctly gitignored so never committed, but they should live in a secrets manager, and those keys should be rotated.</li>
+</ol>
+<h3 id="234-structural-limitations">23.4 Structural limitations</h3>
+<ol start="10">
+<li><strong>Single-broker Kafka</strong> — SPOF, ~800 ev/s ceiling, no replication.</li>
+<li><strong>Reactive-only scaling</strong> — responds after lag builds, though exam surges are predictable.</li>
+<li><strong>~12 s end-to-end latency floor</strong> — inherent to a 10 s micro-batch trigger.</li>
+<li><strong>Resource contention on one t3.medium</strong> — Spark + Redis + Grafana + Prometheus + k3s + cron on 2 vCPU / 4 GB is what forced both the <code>STORAGE_ENABLED</code> split and the cron-over-Airflow decision.</li>
+<li><strong>No schema registry</strong> — JSON with a hand-rolled <code>schema_version</code> field.</li>
+<li><strong>No CI/CD, no automated tests</strong> — the intelligence classes are pure and trivially unit-testable, but aren't tested; load testing is a manual script.</li>
+<li><strong>Batch job is single-node-bound</strong> via the pandas conversion.</li>
+</ol>
+<h2 id="24-what-id-change-in-priority-order">24. What I'd change, in priority order</h2>
+<ol>
+<li><strong>Multi-broker Kafka (RF=3, <code>min.insync.replicas=2</code>, <code>acks=all</code>, idempotent producer)</strong> — removes the SPOF and the throughput ceiling in one move.</li>
+<li><strong>Iceberg or Delta Lake</strong> instead of raw Parquet — ACID commits give true exactly-once sinks, plus schema evolution, compaction and time-travel; structurally solves the small-file problem the batcher works around.</li>
+<li><strong>Fix the dedup memory leak</strong> (bucketed keys) and <strong>deploy the priority consumer</strong>.</li>
+<li><strong>Real-time OLAP (ClickHouse / Druid / Pinot)</strong> replacing the pre-computed Redis-KPI + DynamoDB serving layer — arbitrary slice-and-dice instead of only the KPIs Spark was told to compute.</li>
+<li><strong>Flink</strong> (or Spark Continuous Processing) if sub-second latency is a product requirement.</li>
+<li><strong>Managed where undifferentiated:</strong> MSK, EKS at ≥3 nodes, Amazon Managed Prometheus/Grafana, and <strong>Karpenter</strong> replacing the CloudWatch-CPU→ASG node scaler (Karpenter scales on <em>pending pods</em> — the actual signal — instead of a CPU proxy).</li>
+<li><strong>Schema registry + Avro/Protobuf.</strong></li>
+<li><strong>Security hardening:</strong> SG-to-SG rules, TLS + SASL, secrets manager, least-privilege IAM.</li>
+<li><strong>CI/CD + GitOps</strong> — Terraform plan/apply gates, ArgoCD/Flux for manifests, a baked container image in ECR.</li>
+<li><strong>Data quality + tests</strong> — Great Expectations/Deequ, a DLQ for malformed events, unit tests for <code>SurgeDetector</code>/<code>AdaptiveBatchOptimizer</code>, automated load and chaos tests.</li>
+<li><strong>Predictive scaling</strong> — pre-warm before known exam windows.</li>
+</ol>
+<hr />
+<h1 class="part" id="part-vi-answer-bank-and-reference">PART VI — ANSWER BANK AND REFERENCE</h1>
+<h2 id="25-question-bank">25. Question bank</h2>
+<h3 id="architecture-rationale">Architecture &amp; rationale</h3>
+<p><strong>Why build two pipelines?</strong> To compare managed vs self-managed on the same workload. P1 optimizes time-to-value and zero ops; P2 optimizes control — over cost, over the scaling signal, over stateful processing. Neither is universally better.</p>
+<p><strong>Why was P2 needed?</strong> Six reasons: Lambda's statelessness made stateful intelligence awkward; per-event/per-scan pricing bends the wrong way at volume; the SLA needed explicit buffering/replay/backpressure; the project needed to own the scaling <em>signal</em>; observability across managed services was painful; portability and depth.</p>
+<p><strong>Which would you ship in production?</strong> Depends on volume and team. Small team, spiky/low volume → P1 plus Managed Flink for stateful bits. High sustained volume, cost pressure, or portability requirements → P2's shape, but with MSK/EKS rather than fully self-managed.</p>
+<p><strong>Why Lambda architecture (batch + stream)?</strong> Different freshness requirements. Streaming serves second-level KPIs; batch computes richer daily aggregates once, cheaply, where latency doesn't matter.</p>
+<p><strong>What's the single most important design decision?</strong> Splitting the monitoring consumer from the storage consumer. It's what makes the dashboard immune to storage backpressure and lets each side scale on its own terms.</p>
+<h3 id="kafka">Kafka</h3>
+<p><strong>Why Kafka over Kinesis?</strong> Replay, partition parallelism, no lock-in, and — decisively — consumer-controlled offsets, which is what makes lag a usable scaling signal.
+<strong>Why 10 partitions?</strong> Parallelism ceiling; matches max pods; ~30 ev/s per pod at the 10× target.
+<strong>Why key by <code>user_id</code>?</strong> Ordering is guaranteed only within a partition; keying pins a user to one partition so their lifecycle stays ordered.
+<strong>What's KRaft?</strong> Kafka's built-in Raft metadata quorum — no ZooKeeper. One less system to run.
+<strong>What happens if the broker dies?</strong> Consumption pauses, dashboard goes stale, nothing is lost. Production fix: 3 brokers RF=3, so it becomes a leader election.
+<strong>How do you handle backpressure?</strong> Kafka <em>is</em> the buffer; <code>maxOffsetsPerTrigger</code> caps batch size; KEDA adds consumers; SurgeDetector reroutes overflow.</p>
+<h3 id="spark">Spark</h3>
+<p><strong>Why Spark over Flink?</strong> Unified batch+stream API, first-class Python, mature checkpointing, and the batch job reuses the same engine. Flink is better for sub-second and richer state — it's what I'd revisit.
+<strong>Micro-batch vs continuous?</strong> Micro-batch trades latency for throughput and simpler exactly-once-ish semantics. My 10 s trigger is why worst-case latency is ~12 s.
+<strong>How does checkpointing work?</strong> Offsets + query metadata written after each successful batch (~8.3 KB); on restart Spark reads them and resumes from the exact offset. 25% of batch time; &lt;1 s to read.
+<strong>Why doesn't Spark show up in <code>kafka-consumer-groups.sh</code>?</strong> It manages offsets in its checkpoint directory rather than registering a group — which also keeps KEDA's lag measurement clean.
+<strong>Biggest Spark optimization?</strong> Collapsing 21 actions into one <code>collect()</code> and computing KPIs in Python — the data is only MBs, so distribution was pure overhead.</p>
+<h3 id="scaling">Scaling</h3>
+<p><strong>KEDA vs HPA?</strong> Not either/or — KEDA feeds a Kafka-lag metric into an HPA. CPU is the wrong signal because the workers are I/O-bound (&lt;20% CPU at 50k lag).
+<strong>Explain the two tiers.</strong> KEDA scales <em>pods</em> on lag in ~20–40 s; the ASG scales <em>EC2 nodes</em> on EC2-2 CPU in ~3–4 min when pods can't schedule. Pods first (cheap/fast), nodes only when necessary.
+<strong>Why cap at 10 pods?</strong> Kafka assigns at most one consumer per partition per group; an 11th pod would idle.
+<strong>Why watch EC2-2's CPU and not the ASG's?</strong> The ASG starts at 0 instances, so it has no CPU metric — the alarm would sit in INSUFFICIENT_DATA and never fire. The trigger must be observable before the resource exists.
+<strong>Why is scale-in slower than scale-out?</strong> Asymmetric risk: adding late violates the SLA; removing late costs a few cents.
+<strong>What breaks at 100×?</strong> The single broker (~800 ev/s) and the 10-partition cap. Fix both, and the consumer tier scales linearly.</p>
+<h3 id="fault-tolerance">Fault tolerance</h3>
+<p><strong>How do you guarantee no data loss?</strong> Kafka is durable for 24 h; Spark commits offsets only after success; pods drain on SIGTERM; a SIGKILL just leaves offsets uncommitted for re-delivery. Every path recovers from Kafka. 0 lost across 9 scenarios.
+<strong>Exactly-once?</strong> No — at-least-once delivery plus idempotent/commutative writes = effectively-once for planned shutdowns. True EOS needs a transactional sink.
+<strong>What's the worst-case data at risk?</strong> <code>max_poll_interval_ms</code> × rate ≈ 3,600 events, all replayable from Kafka.
+<strong>How does the system degrade?</strong> Six tiers, sacrificing storage freshness before monitoring freshness, and never sacrificing data.
+<strong>What if two pods write the same user?</strong> DynamoDB <code>ADD</code> is atomic and commutative — each submits a delta, no lost updates.
+<strong>Recovery time?</strong> Spark resumed <strong>5 s</strong> after the generator restarted (Exp 4); pod restart ~90 s, dominated by the pip-install init container.</p>
+<h3 id="cost-optimization">Cost &amp; optimization</h3>
+<p><strong>Where does the money go, and what did you do about it?</strong> Dominant variable cost was S3 PUTs → adaptive batching cut them 87.6%. Idle EC2 → scale-to-zero ASG. DynamoDB → PAY_PER_REQUEST. Storage → Glacier at 30 days.
+<strong>Why is delaying S3 writes safe?</strong> Nothing reads S3 until midnight. Freshness there is a free variable; Redis serves everything latency-sensitive.
+<strong>Cheapest big win?</strong> One config idea — buffer and flush on dual thresholds. No new infrastructure.</p>
+<h3 id="data-modeling">Data &amp; modeling</h3>
+<p><strong>Why Parquet?</strong> Columnar → better compression and column pruning; the analytics standard on S3.
+<strong>Why partition by hour?</strong> Partition pruning — the batch job reads exactly one day's prefix.
+<strong>How do you handle duplicates?</strong> <code>event_id</code> in a Redis Set, pipelined. (And disclose the TTL-reset bug.)
+<strong>Schema evolution?</strong> Not handled — a <code>schema_version</code> field only. Production answer: Avro + Schema Registry.
+<strong>Why both Redis and DynamoDB?</strong> Redis is an ephemeral cache of <em>derived</em> KPIs for the dashboard; DynamoDB is durable, queryable aggregate state. Different lifetimes, different consumers.</p>
+<h3 id="meta">Meta</h3>
+<p><strong>What was hardest?</strong> The KEDA rebalance storm — a positive-feedback loop where scaling out caused lag, which caused more scaling. Fixing it meant understanding the consumer-group protocol, not just the autoscaler.
+<strong>What are you least happy with?</strong> Single-broker Kafka, and shipping the priority topic without its consumer.
+<strong>What did you learn?</strong> That the metric you scale on matters more than the autoscaler you choose, and that knowing when <em>not</em> to use a distributed engine is as valuable as knowing how to use one.</p>
+<hr />
+<h2 id="26-reference">26. Reference</h2>
+<h3 id="redis-keys">Redis keys</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>TTL</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pipeline:active_users</code></td>
+<td>int</td>
+<td>120 s</td>
+<td>Distinct users in last batch</td>
+</tr>
+<tr>
+<td><code>pipeline:events_per_minute</code></td>
+<td>int</td>
+<td>120 s</td>
+<td>Batch count extrapolated to /min</td>
+</tr>
+<tr>
+<td><code>pipeline:online_users_by_region</code></td>
+<td>JSON</td>
+<td>120 s</td>
+<td>Region → distinct logins</td>
+</tr>
+<tr>
+<td><code>pipeline:events_by_type</code></td>
+<td>JSON</td>
+<td>120 s</td>
+<td>Event type → count</td>
+</tr>
+<tr>
+<td><code>pipeline:last_updated</code></td>
+<td>ISO ts</td>
+<td>120 s</td>
+<td>Freshness marker</td>
+</tr>
+<tr>
+<td><code>pipeline:top_5_courses</code></td>
+<td>JSON</td>
+<td>360 s</td>
+<td>Top classes by joins</td>
+</tr>
+<tr>
+<td><code>pipeline:avg_engagement_score</code></td>
+<td>float</td>
+<td>360 s</td>
+<td>Mean engagement</td>
+</tr>
+<tr>
+<td><code>pipeline:avg_score_by_difficulty</code></td>
+<td>JSON</td>
+<td>360 s</td>
+<td>Difficulty → mean score</td>
+</tr>
+<tr>
+<td><code>pipeline:dropout_rate</code></td>
+<td>float</td>
+<td>360 s</td>
+<td>Voluntary leaves ÷ joins</td>
+</tr>
+<tr>
+<td><code>pipeline:premium_vs_free</code></td>
+<td>JSON</td>
+<td>360 s</td>
+<td>Subscription split</td>
+</tr>
+<tr>
+<td><code>pipeline:device_breakdown</code></td>
+<td>JSON</td>
+<td>360 s</td>
+<td>Device split</td>
+</tr>
+<tr>
+<td><code>pipeline:session_completion_rate</code></td>
+<td>float</td>
+<td>360 s</td>
+<td>Completed ÷ started</td>
+</tr>
+<tr>
+<td><code>pipeline:active_classes_count</code></td>
+<td>int</td>
+<td>900 s</td>
+<td>Distinct classes joined</td>
+</tr>
+<tr>
+<td><code>pipeline:avg_class_duration_sec</code></td>
+<td>float</td>
+<td>900 s</td>
+<td>Mean class duration</td>
+</tr>
+<tr>
+<td><code>pipeline:mobile_vs_desktop_ratio</code></td>
+<td>float</td>
+<td>900 s</td>
+<td>Device ratio</td>
+</tr>
+<tr>
+<td><code>pipeline:surge_detected</code></td>
+<td>0/1</td>
+<td>120 s</td>
+<td>Surge flag</td>
+</tr>
+<tr>
+<td><code>pipeline:s3_cost_stats</code></td>
+<td>JSON</td>
+<td>3600 s</td>
+<td>Baseline vs optimized PUTs, reduction %</td>
+</tr>
+<tr>
+<td><code>pipeline:dedup_event_ids</code></td>
+<td>Set</td>
+<td>3600 s*</td>
+<td>Seen <code>event_id</code>s (*TTL resets each batch — see §23.1)</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ports">Ports</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9092</td>
+<td>Kafka PLAINTEXT (internal)</td>
+</tr>
+<tr>
+<td>9093</td>
+<td>Kafka EXTERNAL</td>
+</tr>
+<tr>
+<td>6379</td>
+<td>Redis (VPC-only)</td>
+</tr>
+<tr>
+<td>8000</td>
+<td>Spark Prometheus metrics</td>
+</tr>
+<tr>
+<td>8001</td>
+<td>Storage-worker Prometheus metrics</td>
+</tr>
+<tr>
+<td>9090</td>
+<td>Prometheus UI</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>Grafana</td>
+</tr>
+<tr>
+<td>6443</td>
+<td>k3s API server</td>
+</tr>
+<tr>
+<td>8472/udp</td>
+<td>Flannel VXLAN overlay</td>
+</tr>
+<tr>
+<td>5050</td>
+<td>Local generator console</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="key-file-map">Key file map</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generator.py</code></td>
+<td>Stateful event generator + Kafka producer</td>
+</tr>
+<tr>
+<td><code>spark/stream_consumer.py</code></td>
+<td>Spark monitoring consumer → Redis + Prometheus</td>
+</tr>
+<tr>
+<td><code>spark/intelligence.py</code></td>
+<td><code>SurgeDetector</code>, <code>AdaptiveBatchOptimizer</code></td>
+</tr>
+<tr>
+<td><code>spark/storage_worker.py</code></td>
+<td>Python k8s pod consumer → S3 + DynamoDB</td>
+</tr>
+<tr>
+<td><code>spark/batch_reports.py</code></td>
+<td>Nightly aggregates → DailyReports</td>
+</tr>
+<tr>
+<td><code>dags/batch_reports_dag.py</code></td>
+<td>Airflow equivalent (provided, not deployed)</td>
+</tr>
+<tr>
+<td><code>k8s/*.yaml</code></td>
+<td>Namespace, ConfigMap, Deployment, KEDA ScaledObject, script CM</td>
+</tr>
+<tr>
+<td><code>terraform/main.tf</code></td>
+<td>S3, DynamoDB×3, IAM, SSM, EIP, ASG, alarms, SGs</td>
+</tr>
+<tr>
+<td><code>scripts/setup_k3s.sh</code></td>
+<td>Install k3s, store token in SSM, install KEDA, deploy manifests</td>
+</tr>
+<tr>
+<td><code>scripts/apply_eip.sh</code></td>
+<td>Propagate the Elastic IP into Kafka + all consumers</td>
+</tr>
+<tr>
+<td><code>scripts/test_10x_load.sh</code></td>
+<td>Switch generator between 30 and 300 ev/s</td>
+</tr>
+<tr>
+<td><code>prometheus/prometheus.yml</code></td>
+<td>Static + EC2-discovery scrape config</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="glossary">Glossary</h3>
+<p><strong>KRaft</strong> — Kafka's ZooKeeper-free metadata mode. <strong>Consumer group</strong> — set of consumers sharing partitions of a topic; one partition per consumer max. <strong>Consumer lag</strong> — <code>latest offset − committed offset</code>; how far behind a group is. <strong>Rebalance</strong> — partition re-assignment triggered when group membership changes. <strong>Checkpoint</strong> — Spark's durable record of committed offsets/state. <strong>Micro-batch</strong> — Structured Streaming's unit of work. <strong>Hysteresis</strong> — using different enter/exit thresholds to prevent state flapping. <strong>KEDA</strong> — event-driven autoscaler feeding external metrics to an HPA. <strong>HPA</strong> — Kubernetes Horizontal Pod Autoscaler. <strong>ScaledObject</strong> — KEDA CRD defining a scaling trigger. <strong>k3s</strong> — lightweight Kubernetes distribution. <strong>Parquet</strong> — columnar file format. <strong>Hive partitioning</strong> — <code>key=value</code> directory layout enabling partition pruning. <strong>PAY_PER_REQUEST</strong> — DynamoDB on-demand billing. <strong>Effectively-once</strong> — at-least-once delivery + idempotent writes yielding once-like outcomes.</p>
+<div class="footer">EdTech Real-Time Analytics Pipeline · CSG527 · architecture interview study guide · generated from deep_dive_architecture.md</div>
+</main>
+</body>
+</html>
