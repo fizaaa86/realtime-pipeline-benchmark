@@ -1,6 +1,6 @@
 # AWS EdTech Event Pipeline — serverless vs self-managed, measured
 
-*Developed Jan 2026 – Jun 2026. Published to GitHub July 2026.*
+*Developed Jan 2026 – Jun 2026. Published to GitHub Sep 2026.*
 
 Two real-time analytics pipelines built over **the same 30 events/sec stream**
 from a simulated learning platform, then benchmarked against each other:
